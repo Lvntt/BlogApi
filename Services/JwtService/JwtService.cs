@@ -32,7 +32,8 @@ public class JwtService : IJwtService
             {
                 new ("id", user.Id.ToString()),
                 new (ClaimTypes.Email, user.Email)
-            })
+            }),
+            Audience = _configuration.GetSection("Authentication:Audience").Value
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);

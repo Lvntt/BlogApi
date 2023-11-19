@@ -1,7 +1,6 @@
 using System.Text;
 using BlogApi;
 using BlogApi.Data.Repositories;
-using BlogApi.Services;
 using BlogApi.Services.JwtService;
 using BlogApi.Services.UserService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -22,6 +21,7 @@ builder.Services.AddDbContext<BlogDbContext>(options =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITokenBlacklistRepository, TokenBlacklistRepository>();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -39,6 +39,8 @@ builder.Services.AddAuthentication(options =>
         ),
         ValidateIssuerSigningKey = true,
         ValidateLifetime = true,
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration.GetSection("Authentication:Audience").Value,
         LifetimeValidator = (before, expires, _, _) =>
         {
             var utcNow = DateTime.UtcNow;
@@ -57,6 +59,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

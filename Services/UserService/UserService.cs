@@ -1,3 +1,4 @@
+using AutoMapper;
 using BlogApi.Data.Repositories;
 using BlogApi.Dtos;
 using BlogApi.Models;
@@ -7,10 +8,12 @@ namespace BlogApi.Services.UserService;
 public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
+    private readonly ITokenBlacklistRepository _tokenBlacklistRepository;
 
-    public UserService(IUserRepository userRepository)
+    public UserService(IUserRepository userRepository, ITokenBlacklistRepository tokenBlacklistRepository)
     {
         _userRepository = userRepository;
+        _tokenBlacklistRepository = tokenBlacklistRepository;
     }
 
     public async Task<ServiceResponse<User>> Register(UserRegisterDto request)
@@ -26,6 +29,7 @@ public class UserService : IUserService
         }
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -59,12 +63,21 @@ public class UserService : IUserService
         return user != null && BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash)
             ? new ServiceResponse<User>
             {
-                IsSuccessful = false,
-                ErrorMessage = "Invalid email or password"
+                Data = user
             }
             : new ServiceResponse<User>
             {
-                Data = user
+                IsSuccessful = false,
+                ErrorMessage = "Invalid email or password"
             };
+    }
+
+    public async Task<bool> Logout(TokenModel token)
+    {
+        if (await _tokenBlacklistRepository.GetTokenFromBlacklist(token) != null)
+        {
+            return false;
+        }
+        return await _tokenBlacklistRepository.BlacklistToken(token);
     }
 }
