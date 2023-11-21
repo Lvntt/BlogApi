@@ -1,10 +1,9 @@
 using BlogApi.Dtos;
+using BlogApi.Dtos.ValidationAttributes;
 using BlogApi.Models;
 using BlogApi.Services.UserService;
 using BlogApi.Services.JwtService;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 
 namespace BlogApi.Controllers;
 
@@ -24,50 +23,59 @@ public class UserController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<TokenModel>> Register([FromBody] UserRegisterDto request)
     {
-        var response = await _userService.Register(request);
-        if (response.IsSuccessful)
-        {
-            return Ok(
-                new TokenModel { Token = _jwtService.GenerateToken(response.Data!) }
-            );
-        }
-
-        return BadRequest(response.ErrorMessage);
+        var user = await _userService.Register(request);
+        return Ok(
+            new TokenModel { Token = _jwtService.GenerateToken(user) }
+        );
     }
-    
+
     [HttpPost("login")]
     public async Task<ActionResult<TokenModel>> Login([FromBody] LoginCredentialsDto request)
     {
-        var response = await _userService.Login(request);
-        if (response.IsSuccessful)
-        {
-            return Ok(
-                new TokenModel { Token = _jwtService.GenerateToken(response.Data!) }
-            );
-        }
-
-        return BadRequest(response.ErrorMessage);
+        var user = await _userService.Login(request);
+        return Ok(
+            new TokenModel { Token = _jwtService.GenerateToken(user) }
+        );
     }
-    
+
     [Authorize]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
         var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-        if (token.IsNullOrEmpty())
-        {
-            return Unauthorized();
-        }
 
-        var response = await _userService.Logout(
+        await _userService.Logout(
             new TokenModel { Token = token }
         );
+        return Ok();
+    }
 
-        if (response)
+    [Authorize]
+    [HttpGet("profile")]
+    public async Task<ActionResult<UserDto>> GetUserProfile()
+    {
+        var userId = (Guid)HttpContext.Items["UserId"]!;
+        var user = await _userService.GetUserProfile(userId);
+            
+        return Ok(new UserDto
         {
-            return Ok();
-        }
+            Id = user.Id,
+            FullName = user.FullName,
+            Email = user.Email,
+            BirthDate = user.BirthDate,
+            Gender = user.Gender,
+            PhoneNumber = user.PhoneNumber,
+            CreateTime = user.CreateTime
+        });
+    }
 
-        return Unauthorized();
+    [Authorize]
+    [HttpPut("profile")]
+    public async Task<IActionResult> EditUserProfile([FromBody] UserEditDto request)
+    {
+        var userId = (Guid)HttpContext.Items["UserId"]!;
+        await _userService.EditUserProfile(request, userId);
+
+        return Ok();
     }
 }

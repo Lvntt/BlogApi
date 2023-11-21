@@ -1,6 +1,7 @@
 using System.Text;
 using BlogApi;
 using BlogApi.Data.Repositories;
+using BlogApi.Middlewares;
 using BlogApi.Services.JwtService;
 using BlogApi.Services.UserService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -8,10 +9,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddLogging();
 
 builder.Services.AddDbContext<BlogDbContext>(options =>
 {
@@ -22,6 +26,8 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenBlacklistRepository, TokenBlacklistRepository>();
+builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
+builder.Services.AddTransient<JwtMiddleware>();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -61,6 +67,9 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+app.UseMiddleware<JwtMiddleware>();
 
 app.MapControllers();
 

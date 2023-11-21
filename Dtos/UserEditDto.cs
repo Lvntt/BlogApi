@@ -1,24 +1,17 @@
 using System.ComponentModel.DataAnnotations;
 using BlogApi.Models.Types;
 
-namespace BlogApi.Models;
+namespace BlogApi.Dtos;
 
-public class User
+public class UserEditDto
 {
-    [Key]
-    public Guid Id { get; set; }
-    
-    [Required]
     [MinLength(1)]
+    [Required]
     public string FullName { get; set; } = string.Empty;
     
-    [Required]
-    [MinLength(6)]
-    public string PasswordHash { get; set; } = string.Empty;
-    
-    [Required]
     [MinLength(1)]
     [EmailAddress]
+    [Required]
     public string Email { get; set; } = string.Empty;
     
     public DateTime? BirthDate { get; set; }
@@ -28,7 +21,4 @@ public class User
     
     [Phone]
     public string? PhoneNumber { get; set; }
-    
-    [Required]
-    public DateTime CreateTime { get; set; }
 }

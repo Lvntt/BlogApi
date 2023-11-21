@@ -1,20 +1,16 @@
 using System.ComponentModel.DataAnnotations;
 using BlogApi.Models.Types;
 
-namespace BlogApi.Models;
+namespace BlogApi.Dtos;
 
-public class User
+public class UserDto
 {
-    [Key]
+    [Required]
     public Guid Id { get; set; }
     
     [Required]
     [MinLength(1)]
     public string FullName { get; set; } = string.Empty;
-    
-    [Required]
-    [MinLength(6)]
-    public string PasswordHash { get; set; } = string.Empty;
     
     [Required]
     [MinLength(1)]

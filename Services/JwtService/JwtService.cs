@@ -30,8 +30,7 @@ public class JwtService : IJwtService
             Issuer = _configuration.GetSection("Authentication:Issuer").Value,
             Subject = new ClaimsIdentity(new Claim[]
             {
-                new ("id", user.Id.ToString()),
-                new (ClaimTypes.Email, user.Email)
+                new ("id", user.Id.ToString())
             }),
             Audience = _configuration.GetSection("Authentication:Audience").Value
         };
@@ -39,5 +38,38 @@ public class JwtService : IJwtService
         var token = tokenHandler.CreateToken(tokenDescriptor);
 
         return tokenHandler.WriteToken(token);
+    }
+
+    public Guid? ValidateToken(string token)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+            _configuration.GetSection("Authentication:TokenSecret").Value!)
+        );
+
+        try
+        {
+            tokenHandler.ValidateToken(token, new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = key,
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ClockSkew = TimeSpan.Zero
+            }, out var validatedToken);
+
+            var jwtToken = (JwtSecurityToken)validatedToken;
+            var rawUserId = jwtToken.Claims.FirstOrDefault(x => x.Type == "id")?.Value;
+            if (Guid.TryParse(rawUserId, out Guid userId))
+            {
+                return userId;
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

@@ -1,4 +1,4 @@
-using AutoMapper;
+using System.Security.Authentication;
 using BlogApi.Data.Repositories;
 using BlogApi.Dtos;
 using BlogApi.Models;
@@ -16,20 +16,16 @@ public class UserService : IUserService
         _tokenBlacklistRepository = tokenBlacklistRepository;
     }
 
-    public async Task<ServiceResponse<User>> Register(UserRegisterDto request)
+    public async Task<User> Register(UserRegisterDto request)
     {
         var existingUser = await _userRepository.GetUserByEmail(request.Email);
         if (existingUser != null)
         {
-            return new ServiceResponse<User>
-            {
-                IsSuccessful = false,
-                ErrorMessage = $"User with email {request.Email} already exists."
-            };
+            throw new InvalidOperationException($"User with email {request.Email} already exists.");
         }
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-        
+
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -38,46 +34,55 @@ public class UserService : IUserService
             Email = request.Email,
             BirthDate = request.BirthDate,
             Gender = request.Gender,
-            PhoneNumber = request.PhoneNumber
+            PhoneNumber = request.PhoneNumber,
+            CreateTime = DateTime.UtcNow
         };
 
-        var isSuccess = await _userRepository.AddUser(user);
-        if (!isSuccess)
-        {
-            return new ServiceResponse<User>
-            {
-                IsSuccessful = false,
-                ErrorMessage = "Error while adding the user."
-            };
-        }
-
-        return new ServiceResponse<User>
-        {
-            Data = user
-        };
+        await _userRepository.AddUser(user);
+        return user;
     }
 
-    public async Task<ServiceResponse<User>> Login(LoginCredentialsDto request)
+    public async Task<User> Login(LoginCredentialsDto request)
     {
         var user = await _userRepository.GetUserByEmail(request.Email);
-        return user != null && BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash)
-            ? new ServiceResponse<User>
-            {
-                Data = user
-            }
-            : new ServiceResponse<User>
-            {
-                IsSuccessful = false,
-                ErrorMessage = "Invalid email or password"
-            };
+        if (user == null)
+        {
+            throw new AuthenticationException($"User with email {request.Email} not found.");
+        }
+
+        if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        {
+            throw new AuthenticationException("Invalid email or password.");
+        }
+        
+        return user;
     }
 
-    public async Task<bool> Logout(TokenModel token)
+    public async Task Logout(TokenModel token)
     {
-        if (await _tokenBlacklistRepository.GetTokenFromBlacklist(token) != null)
+        await _tokenBlacklistRepository.BlacklistToken(token);
+    }
+
+    public async Task<User> GetUserProfile(Guid id)
+    {
+        var user = await _userRepository.GetUserById(id);
+        if (user == null)
         {
-            return false;
+            // TODO not found, 404?
+            throw new AuthenticationException("User not found.");
         }
-        return await _tokenBlacklistRepository.BlacklistToken(token);
+        
+        return user;
+    }
+
+    public async Task EditUserProfile(UserEditDto request, Guid id)
+    {
+        var user = await _userRepository.GetUserById(id);
+        if (user == null)
+        {
+            throw new AuthenticationException("User not found.");
+        }
+        
+        await _userRepository.EditUserProfile(id, request);
     }
 }
