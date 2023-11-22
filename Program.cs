@@ -1,7 +1,10 @@
 using System.Text;
 using BlogApi;
+using BlogApi.Context;
 using BlogApi.Data.Repositories;
+using BlogApi.Data.Repositories.AddressRepository;
 using BlogApi.Middlewares;
+using BlogApi.Services.AddressService;
 using BlogApi.Services.JwtService;
 using BlogApi.Services.UserService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -19,13 +22,19 @@ builder.Services.AddLogging();
 
 builder.Services.AddDbContext<BlogDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("BlogConnection"));
+});
+builder.Services.AddDbContext<GarDbContext>(options =>
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("GarConnection"));
 });
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ITokenBlacklistRepository, TokenBlacklistRepository>();
+builder.Services.AddScoped<IAddressRepository, AddressRepository>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<ITokenBlacklistRepository, TokenBlacklistRepository>();
+builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
 builder.Services.AddTransient<JwtMiddleware>();
 
