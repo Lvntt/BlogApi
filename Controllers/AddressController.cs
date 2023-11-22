@@ -16,8 +16,8 @@ public class AddressController : ControllerBase
     }
 
     [HttpGet("search")]
-    public ActionResult<List<SearchAddressDto>> Search(long? parentObjectId, string? query)
+    public async Task<ActionResult<List<SearchAddressDto>>> Search(long? parentObjectId, string? query)
     {
-        return Ok(_addressService.Search(parentObjectId ?? 0, query ?? ""));
+        return Ok(await _addressService.Search(parentObjectId ?? 0, query ?? ""));
     }
 }

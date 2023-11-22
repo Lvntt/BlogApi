@@ -4,6 +4,6 @@ namespace BlogApi.Services.AddressService;
 
 public interface IAddressService
 {
-    List<SearchAddressDto> Search(long parentObjectId, string query);
-    List<SearchAddressDto> Chain(Guid objectGuid);
+    Task<List<SearchAddressDto>> Search(long parentObjectId, string query);
+    Task<List<SearchAddressDto>> Chain(Guid objectGuid);
 }

@@ -12,12 +12,12 @@ public class AddressService : IAddressService
         _addressRepository = addressRepository;
     }
 
-    public List<SearchAddressDto> Search(long parentObjectId, string query)
+    public Task<List<SearchAddressDto>> Search(long parentObjectId, string query)
     {
         return _addressRepository.Search(parentObjectId, query);
     }
 
-    public List<SearchAddressDto> Chain(Guid objectGuid)
+    public Task<List<SearchAddressDto>> Chain(Guid objectGuid)
     {
         throw new NotImplementedException();
     }
