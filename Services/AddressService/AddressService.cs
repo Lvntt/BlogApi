@@ -19,6 +19,6 @@ public class AddressService : IAddressService
 
     public Task<List<SearchAddressDto>> Chain(Guid objectGuid)
     {
-        throw new NotImplementedException();
+        return _addressRepository.Chain(objectGuid);
     }
 }

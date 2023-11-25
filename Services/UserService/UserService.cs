@@ -47,7 +47,7 @@ public class UserService : IUserService
         var user = await _userRepository.GetUserByEmail(request.Email);
         if (user == null)
         {
-            throw new AuthenticationException($"User with email {request.Email} not found.");
+            throw new KeyNotFoundException($"User with email {request.Email} not found.");
         }
 
         if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
@@ -68,8 +68,7 @@ public class UserService : IUserService
         var user = await _userRepository.GetUserById(id);
         if (user == null)
         {
-            // TODO not found, 404?
-            throw new AuthenticationException("User not found.");
+            throw new KeyNotFoundException("User not found.");
         }
         
         return user;
@@ -80,7 +79,7 @@ public class UserService : IUserService
         var user = await _userRepository.GetUserById(id);
         if (user == null)
         {
-            throw new AuthenticationException("User not found.");
+            throw new KeyNotFoundException("User not found.");
         }
         
         await _userRepository.EditUserProfile(id, request);
