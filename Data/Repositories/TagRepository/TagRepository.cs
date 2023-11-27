@@ -28,4 +28,9 @@ public class TagRepository : ITagRepository
     {
         return await _context.Tags.ToListAsync();
     }
+
+    public Tag? GetTagFromGuid(Guid id)
+    {
+        return _context.Tags.FirstOrDefault(tag => tag.Id == id);
+    }
 }
