@@ -43,6 +43,20 @@ public class GlobalExceptionHandlingMiddleware : IMiddleware
                 Type = "Error",
                 Detail = ae.Message
             };
+
+            var jsonProblem = JsonSerializer.Serialize(problem);
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(jsonProblem);
+        }
+        catch (KeyNotFoundException nfe)
+        {
+            context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+            var problem = new ProblemDetails
+            {
+                Status = (int)HttpStatusCode.NotFound,
+                Type = "Error",
+                Detail = nfe.Message
+            };
             
             var jsonProblem = JsonSerializer.Serialize(problem);
             context.Response.ContentType = "application/json";
@@ -54,7 +68,7 @@ public class GlobalExceptionHandlingMiddleware : IMiddleware
                                 $"StackTrace: {e.StackTrace}");
             
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-            // TODO StackOverflow, OutOfMemory?
+            
             var problem = new ProblemDetails
             {
                 Status = (int)HttpStatusCode.InternalServerError,

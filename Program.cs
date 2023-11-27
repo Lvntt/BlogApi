@@ -3,9 +3,11 @@ using BlogApi;
 using BlogApi.Context;
 using BlogApi.Data.Repositories;
 using BlogApi.Data.Repositories.AddressRepository;
+using BlogApi.Data.Repositories.TagRepository;
 using BlogApi.Middlewares;
 using BlogApi.Services.AddressService;
 using BlogApi.Services.JwtService;
+using BlogApi.Services.TagService;
 using BlogApi.Services.UserService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -32,9 +34,11 @@ builder.Services.AddDbContext<GarDbContext>(options =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITokenBlacklistRepository, TokenBlacklistRepository>();
 builder.Services.AddScoped<IAddressRepository, AddressRepository>();
+builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
+builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
 builder.Services.AddTransient<JwtMiddleware>();
 

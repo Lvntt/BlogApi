@@ -20,4 +20,10 @@ public class AddressController : ControllerBase
     {
         return Ok(await _addressService.Search(parentObjectId ?? 0, query ?? ""));
     }
+
+    [HttpGet("chain")]
+    public async Task<ActionResult<List<SearchAddressDto>>> Chain(Guid objectGuid)
+    {
+        return Ok(await _addressService.Chain(objectGuid));
+    }
 }

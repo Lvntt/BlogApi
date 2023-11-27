@@ -9,5 +9,7 @@ public class BlogDbContext : DbContext
     
     public DbSet<User> Users { get; set; }
     public DbSet<TokenModel> InvalidTokens { get; set; }
+    public DbSet<Tag> Tags { get; set; }
+    public DbSet<Post> Posts { get; set; }
     
 }
