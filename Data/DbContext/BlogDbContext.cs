@@ -10,9 +10,9 @@ public class BlogDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Post>()
-            .HasMany(p => p.LikedUsers)
-            .WithMany(u => u.LikedPosts)
-            .UsingEntity(j => j.ToTable("Likes"));
+            .HasMany<User>()
+            .WithMany()
+            .UsingEntity<Likes>(j => j.ToTable("Likes"));
     }
     
     public DbSet<User> Users { get; set; }
