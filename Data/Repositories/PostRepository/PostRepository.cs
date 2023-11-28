@@ -29,16 +29,29 @@ public class PostRepository : IPostRepository
             .Include(post => post.LikedPosts)
             .FirstOrDefaultAsync(post => post.Id == id);
     }
-    
+
     public bool DidUserLikePost(Post post, User user)
     {
         return post.LikedPosts.Any(liked => liked.UserId == user.Id);
     }
 
+    public async Task<Like?> GetExistingLike(Post post, User user)
+    {
+        return await _context.Likes
+            .FirstOrDefaultAsync(like => like.PostId == post.Id && like.UserId == user.Id);
+    }
+
     public async Task AddLikeToPost(Post post, User user)
     {
-        post.LikedPosts.Add(new Likes { PostId = post.Id, UserId = user.Id });
+        post.LikedPosts.Add(new Like { PostId = post.Id, UserId = user.Id });
         post.Likes++;
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task RemoveLikeFromPost(Post post, Like like)
+    {
+        post.LikedPosts.Remove(like);
+        post.Likes--;
         await _context.SaveChangesAsync();
     }
 }

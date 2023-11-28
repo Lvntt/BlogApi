@@ -44,4 +44,14 @@ public class PostController : ControllerBase
         await _postService.AddLikeToPost(postId, userId);
         return Ok();
     }
+
+    [Authorize]
+    [HttpDelete("{postId}/like")]
+    public async Task<IActionResult> RemoveLikeFromPost(Guid postId)
+    {
+        var userId = (Guid)HttpContext.Items["UserId"]!;
+
+        await _postService.RemoveLikeFromPost(postId, userId);
+        return Ok();
+    }
 }

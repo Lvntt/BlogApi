@@ -163,4 +163,27 @@ public class PostService : IPostService
 
         await _postRepository.AddLikeToPost(post, user);
     }
+
+    public async Task RemoveLikeFromPost(Guid postId, Guid userId)
+    {
+        var post = await _postRepository.GetPost(postId);
+        if (post == null)
+        {
+            throw new KeyNotFoundException($"Post with Guid={postId} not found.");
+        }
+        
+        var user = await _userRepository.GetUserById(userId);
+        if (user == null)
+        {
+            throw new KeyNotFoundException("User not found.");
+        }
+
+        var existingLike = await _postRepository.GetExistingLike(post, user);
+        if (existingLike == null)
+        {
+            throw new InvalidOperationException("User has not liked this post.");
+        }
+
+        await _postRepository.RemoveLikeFromPost(post, existingLike);
+    }
 }
