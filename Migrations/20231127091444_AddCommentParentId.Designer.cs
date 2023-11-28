@@ -3,6 +3,7 @@ using System;
 using BlogApi;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BlogApi.Migrations
 {
     [DbContext(typeof(BlogDbContext))]
-    partial class BlogDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231127091444_AddCommentParentId")]
+    partial class AddCommentParentId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -113,6 +116,9 @@ namespace BlogApi.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("HasLike")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Image")
                         .HasColumnType("text");
 
@@ -209,21 +215,6 @@ namespace BlogApi.Migrations
                     b.ToTable("PostTag");
                 });
 
-            modelBuilder.Entity("Likes", b =>
-                {
-                    b.Property<Guid>("LikedPostsId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("LikedUsersId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("LikedPostsId", "LikedUsersId");
-
-                    b.HasIndex("LikedUsersId");
-
-                    b.ToTable("Likes");
-                });
-
             modelBuilder.Entity("BlogApi.Models.Comment", b =>
                 {
                     b.HasOne("BlogApi.Models.Post", null)
@@ -242,21 +233,6 @@ namespace BlogApi.Migrations
                     b.HasOne("BlogApi.Models.Tag", null)
                         .WithMany()
                         .HasForeignKey("TagsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Likes", b =>
-                {
-                    b.HasOne("BlogApi.Models.Post", null)
-                        .WithMany()
-                        .HasForeignKey("LikedPostsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BlogApi.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("LikedUsersId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

@@ -1,5 +1,6 @@
 using BlogApi.Dtos;
 using BlogApi.Dtos.ValidationAttributes;
+using BlogApi.Models;
 using BlogApi.Services.PostService;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,5 +24,22 @@ public class PostController : ControllerBase
         var userId = (Guid)HttpContext.Items["UserId"]!;
 
         return Ok(await _postService.CreatePost(request, userId));
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<PostFullDto>> GetPostInfo(Guid id)
+    {
+        // TODO handle authorization, hasLike
+        return Ok(await _postService.GetPostInfo(id));
+    }
+
+    [Authorize]
+    [HttpPost("{postId}/like")]
+    public async Task<IActionResult> AddLikeToPost(Guid postId)
+    {
+        var userId = (Guid)HttpContext.Items["UserId"]!;
+
+        await _postService.AddLikeToPost(postId, userId);
+        return Ok();
     }
 }

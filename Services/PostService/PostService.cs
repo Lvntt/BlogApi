@@ -14,7 +14,8 @@ public class PostService : IPostService
     private readonly IUserRepository _userRepository;
     private readonly IAuthorRepository _authorRepository;
 
-    public PostService(IPostRepository postRepository, ITagRepository tagRepository, IUserRepository userRepository, IAuthorRepository authorRepository)
+    public PostService(IPostRepository postRepository, ITagRepository tagRepository, IUserRepository userRepository,
+        IAuthorRepository authorRepository)
     {
         _postRepository = postRepository;
         _tagRepository = tagRepository;
@@ -29,11 +30,12 @@ public class PostService : IPostService
         {
             throw new KeyNotFoundException("User not found.");
         }
-        
+
         // TODO get tags async?
         // TODO replace exception with validation attribute?
         var tags = request.Tags?.Select(tagGuid => _tagRepository.GetTagFromGuid(tagGuid)
-                                                   ?? throw new KeyNotFoundException($"Tag with Guid={tagGuid} not found.")
+                                                   ?? throw new KeyNotFoundException(
+                                                       $"Tag with Guid={tagGuid} not found.")
         ).ToList();
 
         var newPost = new Post
@@ -50,14 +52,13 @@ public class PostService : IPostService
             CommunityName = null,
             AddressId = request.AddressId,
             Likes = 0,
-            HasLike = false,
             CommentsCount = 0,
             Tags = tags
         };
-        
+
         var postId = await _postRepository.AddPost(newPost);
         var existingAuthor = await _authorRepository.GetAuthorById(authorId);
-        
+
         if (existingAuthor == null)
         {
             var newAuthor = new Author
@@ -74,5 +75,82 @@ public class PostService : IPostService
         }
 
         return postId;
+    }
+
+    public async Task<PostFullDto> GetPostInfo(Guid id)
+    {
+        var post = await _postRepository.GetPost(id);
+        if (post == null)
+        {
+            throw new KeyNotFoundException($"Post with Guid={id} not found.");
+        }
+
+        var tags = post.Tags?.Select(tag =>
+            new TagDto
+            {
+                Id = tag.Id,
+                Name = tag.Name,
+                CreateTime = tag.CreateTime
+            }
+        ).ToList();
+
+        var comments = post.Comments.Select(comment =>
+            new CommentDto
+            {
+                Id = comment.Id,
+                CreateTime = comment.CreateTime,
+                Content = comment.Content,
+                ModifiedDate = comment.ModifiedDate,
+                DeleteDate = comment.DeleteDate,
+                AuthorId = comment.AuthorId,
+                Author = comment.Author,
+                SubComments = comment.SubComments
+            }
+        ).ToList();
+
+        var postFullDto = new PostFullDto
+        {
+            Id = post.Id,
+            CreateTime = post.CreateTime,
+            Title = post.Title,
+            Description = post.Description,
+            ReadingTime = post.ReadingTime,
+            Image = post.Image,
+            AuthorId = post.AuthorId,
+            Author = post.Author,
+            CommunityId = post.CommunityId,
+            CommunityName = post.CommunityName,
+            AddressId = post.AddressId,
+            Likes = post.Likes,
+            // TODO change hasLike
+            HasLike = false,
+            CommentsCount = post.CommentsCount,
+            Tags = tags,
+            Comments = comments
+        };
+        
+        return postFullDto;
+    }
+
+    public async Task AddLikeToPost(Guid postId, Guid userId)
+    {
+        var post = await _postRepository.GetPost(postId);
+        if (post == null)
+        {
+            throw new KeyNotFoundException($"Post with Guid={postId} not found.");
+        }
+        
+        var user = await _userRepository.GetUserById(userId);
+        if (user == null)
+        {
+            throw new KeyNotFoundException("User not found.");
+        }
+
+        if (_postRepository.DidUserLikePost(post, user))
+        {
+            throw new InvalidOperationException("User has already liked this post.");
+        }
+
+        await _postRepository.AddLikeToPost(post, user);
     }
 }

@@ -31,4 +31,7 @@ public class User
     
     [Required]
     public DateTime CreateTime { get; set; }
+
+    [Required]
+    public List<Post> LikedPosts { get; set; } = new();
 }

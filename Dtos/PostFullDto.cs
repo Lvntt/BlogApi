@@ -1,11 +1,9 @@
-﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
-namespace BlogApi.Models;
+namespace BlogApi.Dtos;
 
-public class Post
+public class PostFullDto
 {
-    [Key]
     public Guid Id { get; set; }
     
     [Required]
@@ -40,15 +38,15 @@ public class Post
 
     [Required] 
     public int Likes { get; set; }
+
+    [Required]
+    public bool HasLike { get; set; }
     
     [Required]
     public int CommentsCount { get; set; }
     
-    public List<Tag>? Tags { get; set; }
+    public List<TagDto>? Tags { get; set; }
 
     [Required]
-    public List<Comment> Comments { get; set; } = new();
-
-    [Required]
-    public List<User> LikedUsers { get; set; } = new();
+    public List<CommentDto> Comments { get; set; } = new();
 }
