@@ -26,13 +26,15 @@ public class PostController : ControllerBase
         return Ok(await _postService.CreatePost(request, userId));
     }
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<PostFullDto>> GetPostInfo(Guid id)
+    [AllowAnonymous]
+    [HttpGet("{postId}")]
+    public async Task<ActionResult<PostFullDto>> GetPostInfo(Guid postId)
     {
-        // TODO handle authorization, hasLike
-        return Ok(await _postService.GetPostInfo(id));
+        var userId = (Guid?)HttpContext.Items["UserId"];
+        
+        return Ok(await _postService.GetPostInfo(postId, userId));
     }
-
+    
     [Authorize]
     [HttpPost("{postId}/like")]
     public async Task<IActionResult> AddLikeToPost(Guid postId)
@@ -40,6 +42,16 @@ public class PostController : ControllerBase
         var userId = (Guid)HttpContext.Items["UserId"]!;
 
         await _postService.AddLikeToPost(postId, userId);
+        return Ok();
+    }
+
+    [Authorize]
+    [HttpDelete("{postId}/like")]
+    public async Task<IActionResult> RemoveLikeFromPost(Guid postId)
+    {
+        var userId = (Guid)HttpContext.Items["UserId"]!;
+
+        await _postService.RemoveLikeFromPost(postId, userId);
         return Ok();
     }
 }

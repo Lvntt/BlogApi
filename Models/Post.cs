@@ -50,5 +50,5 @@ public class Post
     public List<Comment> Comments { get; set; } = new();
 
     [Required]
-    public List<User> LikedUsers { get; set; } = new();
+    public List<Like> LikedPosts { get; set; } = new();
 }

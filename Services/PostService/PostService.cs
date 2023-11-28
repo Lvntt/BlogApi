@@ -77,12 +77,23 @@ public class PostService : IPostService
         return postId;
     }
 
-    public async Task<PostFullDto> GetPostInfo(Guid id)
+    public async Task<PostFullDto> GetPostInfo(Guid postId, Guid? userId)
     {
-        var post = await _postRepository.GetPost(id);
+        var post = await _postRepository.GetPost(postId);
         if (post == null)
         {
-            throw new KeyNotFoundException($"Post with Guid={id} not found.");
+            throw new KeyNotFoundException($"Post with Guid={postId} not found.");
+        }
+
+        var hasLike = false;
+        if (userId != null)
+        {
+            var user = await _userRepository.GetUserById((Guid)userId);
+            if (user == null)
+            {
+                throw new KeyNotFoundException("User not found.");
+            }
+            hasLike = _postRepository.DidUserLikePost(post, user);
         }
 
         var tags = post.Tags?.Select(tag =>
@@ -107,7 +118,7 @@ public class PostService : IPostService
                 SubComments = comment.SubComments
             }
         ).ToList();
-
+        
         var postFullDto = new PostFullDto
         {
             Id = post.Id,
@@ -122,8 +133,7 @@ public class PostService : IPostService
             CommunityName = post.CommunityName,
             AddressId = post.AddressId,
             Likes = post.Likes,
-            // TODO change hasLike
-            HasLike = false,
+            HasLike = hasLike,
             CommentsCount = post.CommentsCount,
             Tags = tags,
             Comments = comments
@@ -152,5 +162,28 @@ public class PostService : IPostService
         }
 
         await _postRepository.AddLikeToPost(post, user);
+    }
+
+    public async Task RemoveLikeFromPost(Guid postId, Guid userId)
+    {
+        var post = await _postRepository.GetPost(postId);
+        if (post == null)
+        {
+            throw new KeyNotFoundException($"Post with Guid={postId} not found.");
+        }
+        
+        var user = await _userRepository.GetUserById(userId);
+        if (user == null)
+        {
+            throw new KeyNotFoundException("User not found.");
+        }
+
+        var existingLike = await _postRepository.GetExistingLike(post, user);
+        if (existingLike == null)
+        {
+            throw new InvalidOperationException("User has not liked this post.");
+        }
+
+        await _postRepository.RemoveLikeFromPost(post, existingLike);
     }
 }

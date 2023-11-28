@@ -10,9 +10,9 @@ public class BlogDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Post>()
-            .HasMany(p => p.LikedUsers)
-            .WithMany(u => u.LikedPosts)
-            .UsingEntity(j => j.ToTable("Likes"));
+            .HasMany<User>()
+            .WithMany()
+            .UsingEntity<Like>(j => j.ToTable("Likes"));
     }
     
     public DbSet<User> Users { get; set; }
@@ -21,5 +21,6 @@ public class BlogDbContext : DbContext
     public DbSet<Post> Posts { get; set; }
     public DbSet<Author> Authors { get; set; }
     public DbSet<Comment> Comments { get; set; }
+    public DbSet<Like> Likes { get; set; }
     
 }

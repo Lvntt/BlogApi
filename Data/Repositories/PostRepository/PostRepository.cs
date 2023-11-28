@@ -1,6 +1,7 @@
 using BlogApi.Dtos;
 using BlogApi.Models;
 using Microsoft.EntityFrameworkCore;
+using Npgsql.PostgresTypes;
 
 namespace BlogApi.Data.Repositories.PostRepository;
 
@@ -25,20 +26,32 @@ public class PostRepository : IPostRepository
         return await _context.Posts
             .Include(post => post.Tags)
             .Include(post => post.Comments)
+            .Include(post => post.LikedPosts)
             .FirstOrDefaultAsync(post => post.Id == id);
     }
 
-    // TODO not working for some reason bruhhhhhhhh
     public bool DidUserLikePost(Post post, User user)
     {
-        return post.LikedUsers.Any(u => u.Id == user.Id);
+        return post.LikedPosts.Any(liked => liked.UserId == user.Id);
+    }
+
+    public async Task<Like?> GetExistingLike(Post post, User user)
+    {
+        return await _context.Likes
+            .FirstOrDefaultAsync(like => like.PostId == post.Id && like.UserId == user.Id);
     }
 
     public async Task AddLikeToPost(Post post, User user)
     {
-        post.LikedUsers.Add(user);
-        user.LikedPosts.Add(post);
+        post.LikedPosts.Add(new Like { PostId = post.Id, UserId = user.Id });
         post.Likes++;
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task RemoveLikeFromPost(Post post, Like like)
+    {
+        post.LikedPosts.Remove(like);
+        post.Likes--;
         await _context.SaveChangesAsync();
     }
 }
