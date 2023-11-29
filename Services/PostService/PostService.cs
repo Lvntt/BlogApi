@@ -4,6 +4,7 @@ using BlogApi.Data.Repositories.PostRepository;
 using BlogApi.Data.Repositories.TagRepository;
 using BlogApi.Dtos;
 using BlogApi.Models;
+using Microsoft.IdentityModel.Tokens;
 
 namespace BlogApi.Services.PostService;
 
@@ -21,6 +22,97 @@ public class PostService : IPostService
         _tagRepository = tagRepository;
         _userRepository = userRepository;
         _authorRepository = authorRepository;
+    }
+
+    public async Task<PostPagedListDto> GetAllAvailablePosts(
+        List<Guid>? tags,
+        string? author,
+        int? min,
+        int? max,
+        SortingOption? sorting,
+        bool onlyMyCommunities,
+        int page,
+        int size
+    )
+    {
+        var postsQueryable = _postRepository.GetAllPosts();
+        var postsCount = postsQueryable.Count();
+        // TODO add page size validation (>0)
+        var pagination = new PageInfoModel
+        {
+            Size = size,
+            Count = (int)Math.Ceiling((double)postsCount / size),
+            Current = page
+        };
+
+        if (!tags.IsNullOrEmpty())
+        {
+            postsQueryable = _postRepository.GetPostsByTagsId(postsQueryable, tags);
+        }
+
+        if (author != null)
+        {
+            postsQueryable = _postRepository.GetPostsByAuthor(postsQueryable, author);
+        }
+
+        if (min != null)
+        {
+            postsQueryable = _postRepository.GetPostsByMinReadingTime(postsQueryable, (int)min);
+        }
+
+        if (max != null)
+        {
+            postsQueryable = _postRepository.GetPostsByMaxReadingTime(postsQueryable, (int)max);
+        }
+
+        if (sorting != null)
+        {
+            postsQueryable = _postRepository.GetSortedPosts(postsQueryable, (SortingOption)sorting);
+        }
+
+        if (onlyMyCommunities)
+        {
+            throw new NotImplementedException();
+        }
+
+        var posts = _postRepository.GetPagedPosts(postsQueryable, pagination);
+        var postsDto = posts.Select(post =>
+            {
+                // TODO invoke repository method for hasLike
+                var hasLike = false;
+                var tagDtos = post.Tags?.Select(tag =>
+                    new TagDto
+                    {
+                        Id = tag.Id,
+                        Name = tag.Name,
+                        CreateTime = tag.CreateTime
+                    }
+                ).ToList();
+                return new PostDto
+                {
+                    Id = post.Id,
+                    CreateTime = post.CreateTime,
+                    Title = post.Title,
+                    Description = post.Description,
+                    ReadingTime = post.ReadingTime,
+                    Image = post.Image,
+                    AuthorId = post.AuthorId,
+                    Author = post.Author,
+                    CommunityId = post.CommunityId,
+                    CommunityName = post.CommunityName,
+                    AddressId = post.AddressId,
+                    Likes = post.Likes,
+                    HasLike = hasLike,
+                    CommentsCount = post.CommentsCount,
+                    Tags = tagDtos
+                };
+            }
+        ).ToList();
+        return new PostPagedListDto
+        {
+            Posts = postsDto,
+            Pagination = pagination
+        };
     }
 
     public async Task<Guid> CreatePost(PostCreateDto request, Guid authorId)
@@ -93,6 +185,7 @@ public class PostService : IPostService
             {
                 throw new KeyNotFoundException("User not found.");
             }
+
             hasLike = _postRepository.DidUserLikePost(post, user);
         }
 
@@ -118,7 +211,7 @@ public class PostService : IPostService
                 SubComments = comment.SubComments
             }
         ).ToList();
-        
+
         var postFullDto = new PostFullDto
         {
             Id = post.Id,
@@ -138,7 +231,7 @@ public class PostService : IPostService
             Tags = tags,
             Comments = comments
         };
-        
+
         return postFullDto;
     }
 
@@ -149,7 +242,7 @@ public class PostService : IPostService
         {
             throw new KeyNotFoundException($"Post with Guid={postId} not found.");
         }
-        
+
         var user = await _userRepository.GetUserById(userId);
         if (user == null)
         {
@@ -171,7 +264,7 @@ public class PostService : IPostService
         {
             throw new KeyNotFoundException($"Post with Guid={postId} not found.");
         }
-        
+
         var user = await _userRepository.GetUserById(userId);
         if (user == null)
         {

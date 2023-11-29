@@ -17,6 +17,24 @@ public class PostController : ControllerBase
         _postService = postService;
     }
 
+    // TODO handle authorize (allow anonymous)
+    [HttpGet]
+    public async Task<ActionResult<PostPagedListDto>> GetAllAvailablePosts(
+        [FromQuery] List<Guid>? tags,
+        [FromQuery] string? author,
+        [FromQuery] int? min,
+        [FromQuery] int? max,
+        [FromQuery] SortingOption? sorting,
+        [FromQuery] bool onlyMyCommunities = false,
+        [FromQuery] int page = 1,
+        [FromQuery] int size = 5
+    )
+    {
+        return Ok(
+            await _postService.GetAllAvailablePosts(tags, author, min, max, sorting, onlyMyCommunities, page, size)
+        );
+    }
+
     [Authorize]
     [HttpPost]
     public async Task<ActionResult<Guid>> CreatePost(PostCreateDto request)
@@ -31,10 +49,10 @@ public class PostController : ControllerBase
     public async Task<ActionResult<PostFullDto>> GetPostInfo(Guid postId)
     {
         var userId = (Guid?)HttpContext.Items["UserId"];
-        
+
         return Ok(await _postService.GetPostInfo(postId, userId));
     }
-    
+
     [Authorize]
     [HttpPost("{postId}/like")]
     public async Task<IActionResult> AddLikeToPost(Guid postId)

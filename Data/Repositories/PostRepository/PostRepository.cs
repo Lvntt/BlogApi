@@ -1,7 +1,7 @@
 using BlogApi.Dtos;
 using BlogApi.Models;
 using Microsoft.EntityFrameworkCore;
-using Npgsql.PostgresTypes;
+using Npgsql.Replication.TestDecoding;
 
 namespace BlogApi.Data.Repositories.PostRepository;
 
@@ -12,6 +12,61 @@ public class PostRepository : IPostRepository
     public PostRepository(BlogDbContext context)
     {
         _context = context;
+    }
+
+    public IQueryable<Post> GetAllPosts()
+    {
+        return _context.Posts
+            .Include(post => post.Tags)
+            // .Include(post => post.LikedPosts)
+            .AsQueryable();
+    }
+
+    public IQueryable<Post> GetPostsByTagsId(IQueryable<Post> posts, List<Guid> tagsId)
+    {
+        // TODO not working without ToList()?
+        return posts.ToList().Where(post =>
+            post.Tags != null && post.Tags.Select(tag => tag.Id)
+                .Intersect(tagsId).Count() == tagsId.Count).AsQueryable();
+        // return posts.Where(post => post.Tags != null && post.Tags.Intersect(tags).Count() == tags.Count);
+        // return posts.Where(post => post.Tags != null && post.Tags.Count(tag => tags.Contains(tag)) == tags.Count);
+    }
+
+    public IQueryable<Post> GetPostsByAuthor(IQueryable<Post> posts, string query)
+    {
+        return posts.Where(post => post.Author.Contains(query));
+    }
+
+    public IQueryable<Post> GetPostsByMinReadingTime(IQueryable<Post> posts, int minTime)
+    {
+        return posts.Where(post => post.ReadingTime >= minTime);
+    }
+
+    public IQueryable<Post> GetPostsByMaxReadingTime(IQueryable<Post> posts, int maxTime)
+    {
+        return posts.Where(post => post.ReadingTime <= maxTime);
+    }
+
+    public IQueryable<Post> GetSortedPosts(IQueryable<Post> posts, SortingOption sortingOption)
+    {
+        return sortingOption switch
+        {
+            SortingOption.CreateAsc => posts.OrderBy(post => post.CreateTime),
+            SortingOption.CreateDesc => posts.OrderByDescending(post => post.CreateTime),
+            SortingOption.LikeAsc => posts.OrderBy(post => post.CreateTime),
+            SortingOption.LikeDesc => posts.OrderByDescending(post => post.Likes),
+            _ => throw new ArgumentOutOfRangeException(nameof(sortingOption), sortingOption, null)
+        };
+    }
+
+    public IQueryable<Post> GetOnlyMyCommunitiesPosts(IQueryable<Post> posts, Guid userId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public List<Post> GetPagedPosts(IQueryable<Post> posts, PageInfoModel pagination)
+    {
+        return posts.Skip((pagination.Current - 1) * pagination.Size).Take(pagination.Size).ToList();
     }
 
     public async Task<Guid> AddPost(Post post)
