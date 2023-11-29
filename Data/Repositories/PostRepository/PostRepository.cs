@@ -1,7 +1,6 @@
 using BlogApi.Dtos;
 using BlogApi.Models;
 using Microsoft.EntityFrameworkCore;
-using Npgsql.Replication.TestDecoding;
 
 namespace BlogApi.Data.Repositories.PostRepository;
 
@@ -18,7 +17,7 @@ public class PostRepository : IPostRepository
     {
         return _context.Posts
             .Include(post => post.Tags)
-            // .Include(post => post.LikedPosts)
+            .Include(post => post.LikedPosts)
             .AsQueryable();
     }
 
@@ -53,7 +52,7 @@ public class PostRepository : IPostRepository
         {
             SortingOption.CreateAsc => posts.OrderBy(post => post.CreateTime),
             SortingOption.CreateDesc => posts.OrderByDescending(post => post.CreateTime),
-            SortingOption.LikeAsc => posts.OrderBy(post => post.CreateTime),
+            SortingOption.LikeAsc => posts.OrderBy(post => post.Likes),
             SortingOption.LikeDesc => posts.OrderByDescending(post => post.Likes),
             _ => throw new ArgumentOutOfRangeException(nameof(sortingOption), sortingOption, null)
         };

@@ -13,6 +13,11 @@ public class BlogDbContext : DbContext
             .HasMany<User>()
             .WithMany()
             .UsingEntity<Like>(j => j.ToTable("Likes"));
+        
+        modelBuilder.Entity<Community>()
+            .HasMany<User>()
+            .WithMany()
+            .UsingEntity<CommunityMember>(cm => cm.ToTable("CommunityMembers"));
     }
     
     public DbSet<User> Users { get; set; }
@@ -22,5 +27,7 @@ public class BlogDbContext : DbContext
     public DbSet<Author> Authors { get; set; }
     public DbSet<Comment> Comments { get; set; }
     public DbSet<Like> Likes { get; set; }
+    public DbSet<Community> Communities { get; set; }
+    public DbSet<CommunityMember> CommunityMembers { get; set; }
     
 }

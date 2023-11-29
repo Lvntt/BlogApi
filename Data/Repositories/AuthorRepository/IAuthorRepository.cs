@@ -6,5 +6,5 @@ public interface IAuthorRepository
 {
     Task<Author?> GetAuthorById(Guid id);
     Task AddAuthor(Author author);
-    Task IncreaseAuthorPosts(Guid id);
+    Task IncrementAuthorPosts(Guid id);
 }

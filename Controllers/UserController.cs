@@ -52,10 +52,10 @@ public class UserController : ControllerBase
 
     [Authorize]
     [HttpGet("profile")]
-    public async Task<ActionResult<UserDto>> GetUserProfile()
+    public ActionResult<UserDto> GetUserProfile()
     {
         var userId = (Guid)HttpContext.Items["UserId"]!;
-        var user = await _userService.GetUserProfile(userId);
+        var user = _userService.GetUserProfile(userId);
             
         return Ok(new UserDto
         {

@@ -117,13 +117,12 @@ public class PostService : IPostService
 
     public async Task<Guid> CreatePost(PostCreateDto request, Guid authorId)
     {
-        var user = await _userRepository.GetUserById(authorId);
+        var user = _userRepository.GetUserById(authorId);
         if (user == null)
         {
             throw new KeyNotFoundException("User not found.");
         }
-
-        // TODO get tags async?
+        
         // TODO replace exception with validation attribute?
         var tags = request.Tags?.Select(tagGuid => _tagRepository.GetTagFromGuid(tagGuid)
                                                    ?? throw new KeyNotFoundException(
@@ -147,6 +146,7 @@ public class PostService : IPostService
             CommentsCount = 0,
             Tags = tags
         };
+        // TODO add CommentsCount increment in Comments endpoints
 
         var postId = await _postRepository.AddPost(newPost);
         var existingAuthor = await _authorRepository.GetAuthorById(authorId);
@@ -163,7 +163,7 @@ public class PostService : IPostService
         }
         else
         {
-            await _authorRepository.IncreaseAuthorPosts(authorId);
+            await _authorRepository.IncrementAuthorPosts(authorId);
         }
 
         return postId;
@@ -180,7 +180,7 @@ public class PostService : IPostService
         var hasLike = false;
         if (userId != null)
         {
-            var user = await _userRepository.GetUserById((Guid)userId);
+            var user = _userRepository.GetUserById((Guid)userId);
             if (user == null)
             {
                 throw new KeyNotFoundException("User not found.");
@@ -243,7 +243,7 @@ public class PostService : IPostService
             throw new KeyNotFoundException($"Post with Guid={postId} not found.");
         }
 
-        var user = await _userRepository.GetUserById(userId);
+        var user = _userRepository.GetUserById(userId);
         if (user == null)
         {
             throw new KeyNotFoundException("User not found.");
@@ -265,7 +265,7 @@ public class PostService : IPostService
             throw new KeyNotFoundException($"Post with Guid={postId} not found.");
         }
 
-        var user = await _userRepository.GetUserById(userId);
+        var user = _userRepository.GetUserById(userId);
         if (user == null)
         {
             throw new KeyNotFoundException("User not found.");

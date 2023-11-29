@@ -26,14 +26,14 @@ public class UserRepository : IUserRepository
         return true;
     }
 
-    public async Task<User?> GetUserById(Guid id)
+    public User? GetUserById(Guid id)
     {
-        return await _context.Users.SingleOrDefaultAsync(user => user.Id == id);
+        return _context.Users.SingleOrDefault(user => user.Id == id);
     }
 
     public async Task<bool> EditUserProfile(Guid id, UserEditDto editedUser)
     {
-        var existingUser = await GetUserById(id);
+        var existingUser = GetUserById(id);
         if (existingUser == null) return false;
         
         existingUser.FullName = editedUser.FullName;

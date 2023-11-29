@@ -1,0 +1,16 @@
+using BlogApi.Dtos;
+using BlogApi.Models.Types;
+
+namespace BlogApi.Services.CommunityService;
+
+public interface ICommunityService
+{
+    Task<Guid> CreateCommunity(CommunityCreateDto request, Guid userId);
+    Task<CommunityFullDto> GetCommunityInfo(Guid communityId);
+    Task<List<CommunityUserDto>> GetUserCommunities(Guid userId);
+    Task<List<CommunityDto>> GetAllCommunities();
+    Task<CommunityRole?> GetUserRoleInCommunity(Guid communityId, Guid userId);
+    Task SubscribeToCommunity(Guid communityId, Guid userId);
+    Task UnsubscribeFromCommunity(Guid communityId, Guid userId);
+    Task<Guid> CreatePost(PostCreateDto request, Guid authorId, Guid communityId);
+}

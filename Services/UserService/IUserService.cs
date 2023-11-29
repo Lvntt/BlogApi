@@ -8,6 +8,6 @@ public interface IUserService
     Task<User> Register(UserRegisterDto request);
     Task<User> Login(LoginCredentialsDto request);
     Task Logout(TokenModel token);
-    Task<User> GetUserProfile(Guid id);
+    User GetUserProfile(Guid id);
     Task EditUserProfile(UserEditDto request, Guid id);
 }

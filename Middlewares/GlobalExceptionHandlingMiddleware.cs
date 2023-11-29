@@ -57,11 +57,25 @@ public class GlobalExceptionHandlingMiddleware : IMiddleware
                 Type = "Error",
                 Detail = nfe.Message
             };
-            
+
             var jsonProblem = JsonSerializer.Serialize(problem);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(jsonProblem);
         }
+        catch (MemberAccessException mae)
+        {
+            context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+            var problem = new ProblemDetails
+            {
+                Status = (int)HttpStatusCode.Forbidden,
+                Type = "Error",
+                Detail = mae.Message
+            };
+
+            var jsonProblem = JsonSerializer.Serialize(problem);
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(jsonProblem);
+        } 
         catch (Exception e)
         {
             _logger.LogError(e, $"An unexpected error occured. \n" +

@@ -23,7 +23,7 @@ public class AuthorRepository : IAuthorRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task IncreaseAuthorPosts(Guid id)
+    public async Task IncrementAuthorPosts(Guid id)
     {
         var author = await GetAuthorById(id);
         author!.Posts += 1;

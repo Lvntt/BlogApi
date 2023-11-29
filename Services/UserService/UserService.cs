@@ -63,9 +63,9 @@ public class UserService : IUserService
         await _tokenBlacklistRepository.BlacklistToken(token);
     }
 
-    public async Task<User> GetUserProfile(Guid id)
+    public User GetUserProfile(Guid id)
     {
-        var user = await _userRepository.GetUserById(id);
+        var user = _userRepository.GetUserById(id);
         if (user == null)
         {
             throw new KeyNotFoundException("User not found.");
@@ -76,7 +76,7 @@ public class UserService : IUserService
 
     public async Task EditUserProfile(UserEditDto request, Guid id)
     {
-        var user = await _userRepository.GetUserById(id);
+        var user = _userRepository.GetUserById(id);
         if (user == null)
         {
             throw new KeyNotFoundException("User not found.");
