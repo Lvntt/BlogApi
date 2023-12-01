@@ -1,3 +1,4 @@
+using BlogApi.Dtos;
 using BlogApi.Models;
 using BlogApi.Models.Types;
 
@@ -17,7 +18,7 @@ public interface ICommunityRepository
     CommunityMember? GetSubscriber(Guid communityId, Guid userId);
     CommunityMember? GetAdministrator(Guid communityId, Guid userId);
     CommunityMember? GetCommunityMember(Guid communityId, Guid userId);
-    Task SubscribeToCommunity(Guid communityId, Guid userId);
     Task IncrementCommunitySubscribers(Community community);
     Task DecrementCommunitySubscribers(Community community);
+    IQueryable<Post> GetCommunityPosts(Community community);
 }

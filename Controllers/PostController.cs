@@ -17,7 +17,7 @@ public class PostController : ControllerBase
         _postService = postService;
     }
 
-    // TODO handle authorize (allow anonymous)
+    [AllowAnonymous]
     [HttpGet]
     public async Task<ActionResult<PostPagedListDto>> GetAllAvailablePosts(
         [FromQuery] List<Guid>? tags,
@@ -30,8 +30,10 @@ public class PostController : ControllerBase
         [FromQuery] int size = 5
     )
     {
+        var userId = (Guid?)HttpContext.Items["UserId"];
+        
         return Ok(
-            await _postService.GetAllAvailablePosts(tags, author, min, max, sorting, onlyMyCommunities, page, size)
+            await _postService.GetAllAvailablePosts(userId, tags, author, min, max, sorting, onlyMyCommunities, page, size)
         );
     }
 

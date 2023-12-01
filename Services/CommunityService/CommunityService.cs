@@ -6,6 +6,8 @@ using BlogApi.Data.Repositories.TagRepository;
 using BlogApi.Dtos;
 using BlogApi.Models;
 using BlogApi.Models.Types;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace BlogApi.Services.CommunityService;
 
@@ -17,7 +19,8 @@ public class CommunityService : ICommunityService
     private readonly IPostRepository _postRepository;
     private readonly IAuthorRepository _authorRepository;
 
-    public CommunityService(ICommunityRepository communityRepository, IUserRepository userRepository, ITagRepository tagRepository, IPostRepository postRepository, IAuthorRepository authorRepository)
+    public CommunityService(ICommunityRepository communityRepository, IUserRepository userRepository,
+        ITagRepository tagRepository, IPostRepository postRepository, IAuthorRepository authorRepository)
     {
         _communityRepository = communityRepository;
         _userRepository = userRepository;
@@ -152,13 +155,6 @@ public class CommunityService : ICommunityService
         {
             throw new KeyNotFoundException($"Community with Guid={communityId} not found.");
         }
-        
-        // TODO can user be an admin and a subscriber at the same time?
-        // var existingSubscriber = _communityRepository.GetSubscriber(communityId, userId);
-        // if (existingSubscriber != null)
-        // {
-        //     throw new InvalidOperationException("User is already subscribed to this community.");
-        // }
 
         var existingMember = _communityRepository.GetCommunityMember(communityId, userId);
         if (existingMember != null)
@@ -190,7 +186,7 @@ public class CommunityService : ICommunityService
         {
             throw new KeyNotFoundException($"Community with Guid={communityId} not found.");
         }
-        
+
         var existingSubscriber = _communityRepository.GetSubscriber(communityId, userId);
         if (existingSubscriber == null)
         {
@@ -208,7 +204,7 @@ public class CommunityService : ICommunityService
         {
             throw new KeyNotFoundException("User not found.");
         }
-        
+
         var community = await _communityRepository.GetCommunityById(communityId);
         if (community == null)
         {
@@ -220,13 +216,13 @@ public class CommunityService : ICommunityService
         {
             throw new MemberAccessException("Access denied");
         }
-        
+
         // TODO replace exception with validation attribute?
         var tags = request.Tags?.Select(tagGuid => _tagRepository.GetTagFromGuid(tagGuid)
                                                    ?? throw new KeyNotFoundException(
                                                        $"Tag with Guid={tagGuid} not found.")
         ).ToList();
-        
+
         var newPost = new Post
         {
             Id = Guid.NewGuid(),
@@ -244,7 +240,7 @@ public class CommunityService : ICommunityService
             CommentsCount = 0,
             Tags = tags
         };
-        
+
         var postId = await _postRepository.AddPost(newPost);
         var existingAuthor = await _authorRepository.GetAuthorById(authorId);
 
@@ -264,5 +260,98 @@ public class CommunityService : ICommunityService
         }
 
         return postId;
+    }
+
+    public async Task<PostPagedListDto> GetCommunityPosts(
+        Guid? authorId,
+        Guid communityId,
+        List<Guid>? tags,
+        SortingOption? sorting,
+        int page,
+        int size
+    )
+    {
+        var community = await _communityRepository.GetCommunityById(communityId);
+        if (community == null)
+        {
+            throw new KeyNotFoundException($"Community with Guid={communityId} not found.");
+        }
+
+        if (community.IsClosed && (authorId == null
+                                   || _communityRepository.GetCommunityMember(communityId, (Guid)authorId) == null))
+        {
+            throw new MemberAccessException("This group is closed.");
+        }
+        
+        var communityPostsQueryable = _communityRepository.GetCommunityPosts(community);
+        var postsCount = communityPostsQueryable.Count();
+        var paginationCount = !communityPostsQueryable.IsNullOrEmpty() ? (int)Math.Ceiling((double)postsCount / size) : 0;
+        // TODO add page size validation (>0)
+        var pagination = new PageInfoModel
+        {
+            Size = size,
+            Count = paginationCount,
+            Current = page
+        };
+        
+        if (!tags.IsNullOrEmpty())
+        {
+            communityPostsQueryable = _postRepository.GetPostsByTagsId(communityPostsQueryable, tags);
+        }
+        
+        if (sorting != null)
+        {
+            communityPostsQueryable = _postRepository.GetSortedPosts(communityPostsQueryable, (SortingOption)sorting);
+        }
+        
+        var posts = _postRepository.GetPagedPosts(communityPostsQueryable, pagination);
+        var postsDto = posts.Select(post =>
+            {
+                var hasLike = false;
+                if (authorId != null)
+                {
+                    var user = _userRepository.GetUserById((Guid)authorId);
+                    if (user == null)
+                    {
+                        throw new KeyNotFoundException("User not found.");
+                    }
+
+                    hasLike = _postRepository.DidUserLikePost(post, user);
+                }
+                
+                var tagDtos = post.Tags?.Select(tag =>
+                    new TagDto
+                    {
+                        Id = tag.Id,
+                        Name = tag.Name,
+                        CreateTime = tag.CreateTime
+                    }
+                ).ToList();
+
+                return new PostDto
+                {
+                    Id = post.Id,
+                    CreateTime = post.CreateTime,
+                    Title = post.Title,
+                    Description = post.Description,
+                    ReadingTime = post.ReadingTime,
+                    Image = post.Image,
+                    AuthorId = post.AuthorId,
+                    Author = post.Author,
+                    CommunityId = post.CommunityId,
+                    CommunityName = post.CommunityName,
+                    AddressId = post.AddressId,
+                    Likes = post.Likes,
+                    HasLike = hasLike,
+                    CommentsCount = post.CommentsCount,
+                    Tags = tagDtos
+                };
+            }
+        ).ToList();
+        return new PostPagedListDto
+        {
+            Posts = postsDto,
+            Pagination = pagination
+        };
     }
 }

@@ -6,6 +6,7 @@ namespace BlogApi.Services.PostService;
 public interface IPostService
 {
     Task<PostPagedListDto> GetAllAvailablePosts(
+        Guid? userId,
         List<Guid>? tags,
         string? author,
         int? min,

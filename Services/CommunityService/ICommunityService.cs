@@ -1,4 +1,5 @@
 using BlogApi.Dtos;
+using BlogApi.Models;
 using BlogApi.Models.Types;
 
 namespace BlogApi.Services.CommunityService;
@@ -13,4 +14,13 @@ public interface ICommunityService
     Task SubscribeToCommunity(Guid communityId, Guid userId);
     Task UnsubscribeFromCommunity(Guid communityId, Guid userId);
     Task<Guid> CreatePost(PostCreateDto request, Guid authorId, Guid communityId);
+
+    Task<PostPagedListDto> GetCommunityPosts(
+        Guid? authorId,
+        Guid communityId,
+        List<Guid>? tags,
+        SortingOption? sorting,
+        int page,
+        int size
+    );
 }

@@ -1,5 +1,6 @@
 using BlogApi.Data.Repositories;
 using BlogApi.Data.Repositories.AuthorRepository;
+using BlogApi.Data.Repositories.CommunityRepository;
 using BlogApi.Data.Repositories.PostRepository;
 using BlogApi.Data.Repositories.TagRepository;
 using BlogApi.Dtos;
@@ -14,17 +15,20 @@ public class PostService : IPostService
     private readonly ITagRepository _tagRepository;
     private readonly IUserRepository _userRepository;
     private readonly IAuthorRepository _authorRepository;
+    private readonly ICommunityRepository _communityRepository;
 
     public PostService(IPostRepository postRepository, ITagRepository tagRepository, IUserRepository userRepository,
-        IAuthorRepository authorRepository)
+        IAuthorRepository authorRepository, ICommunityRepository communityRepository)
     {
         _postRepository = postRepository;
         _tagRepository = tagRepository;
         _userRepository = userRepository;
         _authorRepository = authorRepository;
+        _communityRepository = communityRepository;
     }
 
     public async Task<PostPagedListDto> GetAllAvailablePosts(
+        Guid? userId,
         List<Guid>? tags,
         string? author,
         int? min,
@@ -36,14 +40,6 @@ public class PostService : IPostService
     )
     {
         var postsQueryable = _postRepository.GetAllPosts();
-        var postsCount = postsQueryable.Count();
-        // TODO add page size validation (>0)
-        var pagination = new PageInfoModel
-        {
-            Size = size,
-            Count = (int)Math.Ceiling((double)postsCount / size),
-            Current = page
-        };
 
         if (!tags.IsNullOrEmpty())
         {
@@ -72,14 +68,37 @@ public class PostService : IPostService
 
         if (onlyMyCommunities)
         {
-            throw new NotImplementedException();
+            if (userId != null)
+            {
+                var communityMembers = await _communityRepository.GetUserCommunities((Guid)userId);
+                postsQueryable = _postRepository.GetOnlyMyCommunitiesPosts(postsQueryable, communityMembers, (Guid)userId);
+            }
         }
+        
+        var postsCount = postsQueryable.Count();
+        var paginationCount = !postsQueryable.IsNullOrEmpty() ? (int)Math.Ceiling((double)postsCount / size) : 0;
+        // TODO add page size validation (>0)
+        var pagination = new PageInfoModel
+        {
+            Size = size,
+            Count = paginationCount,
+            Current = page
+        };
 
         var posts = _postRepository.GetPagedPosts(postsQueryable, pagination);
         var postsDto = posts.Select(post =>
             {
-                // TODO invoke repository method for hasLike
                 var hasLike = false;
+                if (userId != null)
+                {
+                    var user = _userRepository.GetUserById((Guid)userId);
+                    if (user == null)
+                    {
+                        throw new KeyNotFoundException("User not found.");
+                    }
+
+                    hasLike = _postRepository.DidUserLikePost(post, user);
+                }
                 var tagDtos = post.Tags?.Select(tag =>
                     new TagDto
                     {

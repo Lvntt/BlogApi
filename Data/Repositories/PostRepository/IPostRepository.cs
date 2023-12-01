@@ -11,7 +11,9 @@ public interface IPostRepository
     IQueryable<Post> GetPostsByMinReadingTime(IQueryable<Post> posts, int minTime);
     IQueryable<Post> GetPostsByMaxReadingTime(IQueryable<Post> posts, int maxTime);
     IQueryable<Post> GetSortedPosts(IQueryable<Post> posts, SortingOption sortingOption);
-    IQueryable<Post> GetOnlyMyCommunitiesPosts(IQueryable<Post> posts, Guid userId);
+
+    IQueryable<Post> GetOnlyMyCommunitiesPosts(IQueryable<Post> posts, List<CommunityMember> communityMembers,
+        Guid userId);
     List<Post> GetPagedPosts(IQueryable<Post> posts, PageInfoModel pagination);
     Task<Guid> AddPost(Post post);
     Task<Post?> GetPost(Guid id);

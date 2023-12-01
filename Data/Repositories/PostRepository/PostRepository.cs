@@ -17,8 +17,7 @@ public class PostRepository : IPostRepository
     {
         return _context.Posts
             .Include(post => post.Tags)
-            .Include(post => post.LikedPosts)
-            .AsQueryable();
+            .Include(post => post.LikedPosts);
     }
 
     public IQueryable<Post> GetPostsByTagsId(IQueryable<Post> posts, List<Guid> tagsId)
@@ -57,10 +56,15 @@ public class PostRepository : IPostRepository
             _ => throw new ArgumentOutOfRangeException(nameof(sortingOption), sortingOption, null)
         };
     }
-
-    public IQueryable<Post> GetOnlyMyCommunitiesPosts(IQueryable<Post> posts, Guid userId)
+    
+    public IQueryable<Post> GetOnlyMyCommunitiesPosts(IQueryable<Post> posts, List<CommunityMember> communityMembers, Guid userId)
     {
-        throw new NotImplementedException();
+        var communityIds = communityMembers
+            .Where(cm => cm.UserId == userId)
+            .Select(cm => cm.CommunityId)
+            .ToList();
+        
+            return posts.Where(post => post.CommunityId != null && communityIds.Contains((Guid)post.CommunityId));
     }
 
     public List<Post> GetPagedPosts(IQueryable<Post> posts, PageInfoModel pagination)

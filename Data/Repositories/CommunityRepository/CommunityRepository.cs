@@ -1,3 +1,4 @@
+using BlogApi.Dtos;
 using BlogApi.Models;
 using BlogApi.Models.Types;
 using Microsoft.EntityFrameworkCore;
@@ -85,12 +86,6 @@ public class CommunityRepository : ICommunityRepository
             cm.CommunityId == communityId && cm.UserId == userId);
     }
 
-    // TODO needed?
-    public Task SubscribeToCommunity(Guid communityId, Guid userId)
-    {
-        throw new NotImplementedException();
-    }
-
     public async Task IncrementCommunitySubscribers(Community community)
     {
         community.SubscribersCount++;
@@ -101,5 +96,13 @@ public class CommunityRepository : ICommunityRepository
     {
         community.SubscribersCount--;
         await _context.SaveChangesAsync();
+    }
+
+    public IQueryable<Post> GetCommunityPosts(Community community)
+    {
+        return _context.Posts
+            .Where(post => post.CommunityId == community.Id)
+            .Include(post => post.Tags)
+            .Include(post => post.LikedPosts);
     }
 }
