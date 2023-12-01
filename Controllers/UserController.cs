@@ -21,18 +21,20 @@ public class UserController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<ActionResult<TokenModel>> Register([FromBody] UserRegisterDto request)
+    public async Task<ActionResult<TokenModel>> Register([FromBody] UserRegisterDto userRegisterDto)
     {
-        var user = await _userService.Register(request);
+        var user = await _userService.Register(userRegisterDto);
+        
         return Ok(
             new TokenModel { Token = _jwtService.GenerateToken(user) }
         );
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<TokenModel>> Login([FromBody] LoginCredentialsDto request)
+    public async Task<ActionResult<TokenModel>> Login([FromBody] LoginCredentialsDto loginCredentialsDto)
     {
-        var user = await _userService.Login(request);
+        var user = await _userService.Login(loginCredentialsDto);
+        
         return Ok(
             new TokenModel { Token = _jwtService.GenerateToken(user) }
         );
@@ -55,27 +57,17 @@ public class UserController : ControllerBase
     public ActionResult<UserDto> GetUserProfile()
     {
         var userId = (Guid)HttpContext.Items["UserId"]!;
-        var user = _userService.GetUserProfile(userId);
-            
-        return Ok(new UserDto
-        {
-            Id = user.Id,
-            FullName = user.FullName,
-            Email = user.Email,
-            BirthDate = user.BirthDate,
-            Gender = user.Gender,
-            PhoneNumber = user.PhoneNumber,
-            CreateTime = user.CreateTime
-        });
+        
+        return Ok(_userService.GetUserProfile(userId));
     }
 
     [Authorize]
     [HttpPut("profile")]
-    public async Task<IActionResult> EditUserProfile([FromBody] UserEditDto request)
+    public async Task<IActionResult> EditUserProfile([FromBody] UserEditDto userEditDto)
     {
         var userId = (Guid)HttpContext.Items["UserId"]!;
-        await _userService.EditUserProfile(request, userId);
-
+        
+        await _userService.EditUserProfile(userEditDto, userId);
         return Ok();
     }
 }

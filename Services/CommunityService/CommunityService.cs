@@ -1,12 +1,11 @@
-using BlogApi.Data.Repositories;
 using BlogApi.Data.Repositories.AuthorRepository;
 using BlogApi.Data.Repositories.CommunityRepository;
 using BlogApi.Data.Repositories.PostRepository;
 using BlogApi.Data.Repositories.TagRepository;
+using BlogApi.Data.Repositories.UserRepo;
 using BlogApi.Dtos;
 using BlogApi.Models;
 using BlogApi.Models.Types;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 namespace BlogApi.Services.CommunityService;
@@ -31,7 +30,7 @@ public class CommunityService : ICommunityService
 
     public async Task<Guid> CreateCommunity(CommunityCreateDto request, Guid userId)
     {
-        var user = _userRepository.GetUserById(userId);
+        var user = await _userRepository.GetUserById(userId);
         if (user == null)
         {
             throw new KeyNotFoundException("User not found.");
@@ -75,22 +74,25 @@ public class CommunityService : ICommunityService
         }
 
         var administrators = _communityRepository.GetCommunityAdministrators(community);
-        var administratorUserDtos = administrators.Select(
-            a =>
+        var administratorUserDtos = new List<UserDto>();
+        
+        foreach (var administrator in administrators)
+        {
+            var user = await _userRepository.GetUserById(administrator.UserId) ?? throw new KeyNotFoundException("User not found.");
+    
+            var userDto = new UserDto
             {
-                var user = _userRepository.GetUserById(a.UserId) ?? throw new KeyNotFoundException("User not found.");
-                return new UserDto
-                {
-                    Id = user.Id,
-                    FullName = user.FullName,
-                    Email = user.Email,
-                    BirthDate = user.BirthDate,
-                    Gender = user.Gender,
-                    PhoneNumber = user.PhoneNumber,
-                    CreateTime = user.CreateTime
-                };
-            }
-        ).ToList();
+                Id = user.Id,
+                FullName = user.FullName,
+                Email = user.Email,
+                BirthDate = user.BirthDate,
+                Gender = user.Gender,
+                PhoneNumber = user.PhoneNumber,
+                CreateTime = user.CreateTime
+            };
+
+            administratorUserDtos.Add(userDto);
+        }
 
         var communityFullDto = new CommunityFullDto
         {
@@ -144,7 +146,7 @@ public class CommunityService : ICommunityService
 
     public async Task SubscribeToCommunity(Guid communityId, Guid userId)
     {
-        var user = _userRepository.GetUserById(userId);
+        var user = await _userRepository.GetUserById(userId);
         if (user == null)
         {
             throw new KeyNotFoundException("User not found.");
@@ -199,7 +201,7 @@ public class CommunityService : ICommunityService
 
     public async Task<Guid> CreatePost(PostCreateDto request, Guid authorId, Guid communityId)
     {
-        var user = _userRepository.GetUserById(authorId);
+        var user = await _userRepository.GetUserById(authorId);
         if (user == null)
         {
             throw new KeyNotFoundException("User not found.");
@@ -305,17 +307,22 @@ public class CommunityService : ICommunityService
         }
         
         var posts = _postRepository.GetPagedPosts(communityPostsQueryable, pagination);
+
+        User? user = null;
+        if (authorId != null)
+        {
+            user = await _userRepository.GetUserById((Guid)authorId);
+            if (user == null)
+            {
+                throw new KeyNotFoundException("User not found.");
+            }
+        }
+        
         var postsDto = posts.Select(post =>
             {
                 var hasLike = false;
-                if (authorId != null)
+                if (user != null)
                 {
-                    var user = _userRepository.GetUserById((Guid)authorId);
-                    if (user == null)
-                    {
-                        throw new KeyNotFoundException("User not found.");
-                    }
-
                     hasLike = _postRepository.DidUserLikePost(post, user);
                 }
                 

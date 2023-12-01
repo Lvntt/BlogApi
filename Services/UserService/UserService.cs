@@ -1,56 +1,52 @@
 using System.Security.Authentication;
+using AutoMapper;
 using BlogApi.Data.Repositories;
 using BlogApi.Dtos;
 using BlogApi.Models;
+using BlogApi.Data.Repositories.UserRepo;
+using BlogApi.Mappers;
 
 namespace BlogApi.Services.UserService;
 
 public class UserService : IUserService
 {
+    private readonly IMapper _mapper;
     private readonly IUserRepository _userRepository;
     private readonly ITokenBlacklistRepository _tokenBlacklistRepository;
 
-    public UserService(IUserRepository userRepository, ITokenBlacklistRepository tokenBlacklistRepository)
+    public UserService(IUserRepository userRepository, ITokenBlacklistRepository tokenBlacklistRepository, IMapper mapper)
     {
         _userRepository = userRepository;
         _tokenBlacklistRepository = tokenBlacklistRepository;
+        _mapper = mapper;
     }
 
-    public async Task<User> Register(UserRegisterDto request)
+    public async Task<User> Register(UserRegisterDto userRegisterDto)
     {
-        var existingUser = await _userRepository.GetUserByEmail(request.Email);
+        var existingUser = await _userRepository.GetUserByEmail(userRegisterDto.Email);
         if (existingUser != null)
         {
-            throw new InvalidOperationException($"User with email {request.Email} already exists.");
+            throw new InvalidOperationException($"User with email {userRegisterDto.Email} already exists.");
         }
 
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(userRegisterDto.Password);
 
-        var user = new User
-        {
-            Id = Guid.NewGuid(),
-            FullName = request.FullName,
-            PasswordHash = passwordHash,
-            Email = request.Email,
-            BirthDate = request.BirthDate,
-            Gender = request.Gender,
-            PhoneNumber = request.PhoneNumber,
-            CreateTime = DateTime.UtcNow
-        };
+        var user = UserMapper.MapToUser(userRegisterDto, passwordHash);
 
         await _userRepository.AddUser(user);
+        await _userRepository.Save();
         return user;
     }
 
-    public async Task<User> Login(LoginCredentialsDto request)
+    public async Task<User> Login(LoginCredentialsDto loginCredentialsDto)
     {
-        var user = await _userRepository.GetUserByEmail(request.Email);
+        var user = await _userRepository.GetUserByEmail(loginCredentialsDto.Email);
         if (user == null)
         {
-            throw new KeyNotFoundException($"User with email {request.Email} not found.");
+            throw new KeyNotFoundException($"User with email {loginCredentialsDto.Email} not found.");
         }
 
-        if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        if (!BCrypt.Net.BCrypt.Verify(loginCredentialsDto.Password, user.PasswordHash))
         {
             throw new AuthenticationException("Invalid email or password.");
         }
@@ -63,25 +59,32 @@ public class UserService : IUserService
         await _tokenBlacklistRepository.BlacklistToken(token);
     }
 
-    public User GetUserProfile(Guid id)
+    public async Task<UserDto> GetUserProfile(Guid id)
     {
-        var user = _userRepository.GetUserById(id);
+        var user = await _userRepository.GetUserById(id);
         if (user == null)
         {
             throw new KeyNotFoundException("User not found.");
         }
-        
-        return user;
+
+        return _mapper.Map<UserDto>(user);
     }
 
-    public async Task EditUserProfile(UserEditDto request, Guid id)
+    public async Task EditUserProfile(UserEditDto userEditDto, Guid id)
     {
-        var user = _userRepository.GetUserById(id);
+        var user = await _userRepository.GetUserById(id);
         if (user == null)
         {
             throw new KeyNotFoundException("User not found.");
         }
         
-        await _userRepository.EditUserProfile(id, request);
+        user.FullName = userEditDto.FullName;
+        user.Email = userEditDto.Email;
+        user.BirthDate = userEditDto.BirthDate;
+        user.Gender = userEditDto.Gender;
+        user.PhoneNumber = userEditDto.PhoneNumber;
+        
+        _userRepository.EditUserProfile(user);
+        await _userRepository.Save();
     }
 }

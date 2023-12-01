@@ -15,8 +15,7 @@ public class UserRegisterDto
     [MinDigits(1)]
     [MinLetters(1)]
     public string Password { get; set; } = string.Empty;
-
-    // TODO regex for email
+    
     [Required]
     [MinLength(1)]
     [EmailAddress]
@@ -28,6 +27,6 @@ public class UserRegisterDto
     [Required]
     public Gender Gender { get; set; }
     
-    [Phone]
+    [ValidPhoneRu]
     public string? PhoneNumber { get; set; }
 }

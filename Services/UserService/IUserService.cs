@@ -5,9 +5,9 @@ namespace BlogApi.Services.UserService;
 
 public interface IUserService
 {
-    Task<User> Register(UserRegisterDto request);
-    Task<User> Login(LoginCredentialsDto request);
+    Task<User> Register(UserRegisterDto userRegisterDto);
+    Task<User> Login(LoginCredentialsDto loginCredentialsDto);
     Task Logout(TokenModel token);
-    User GetUserProfile(Guid id);
-    Task EditUserProfile(UserEditDto request, Guid id);
+    Task<UserDto> GetUserProfile(Guid id);
+    Task EditUserProfile(UserEditDto userEditDto, Guid id);
 }

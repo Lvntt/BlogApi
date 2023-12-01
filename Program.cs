@@ -2,11 +2,13 @@ using System.Text;
 using BlogApi;
 using BlogApi.Context;
 using BlogApi.Data.Repositories;
+using BlogApi.Data.Repositories.UserRepo;
 using BlogApi.Data.Repositories.AddressRepository;
 using BlogApi.Data.Repositories.AuthorRepository;
 using BlogApi.Data.Repositories.CommunityRepository;
 using BlogApi.Data.Repositories.PostRepository;
 using BlogApi.Data.Repositories.TagRepository;
+using BlogApi.Mappers;
 using BlogApi.Middlewares;
 using BlogApi.Services.AddressService;
 using BlogApi.Services.CommunityService;
@@ -51,6 +53,8 @@ builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<ICommunityService, CommunityService>();
 builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
 builder.Services.AddTransient<JwtMiddleware>();
+
+builder.Services.AddAutoMapper(typeof(AutoMappingProfile));
 
 builder.Services.AddAuthentication(options =>
 {

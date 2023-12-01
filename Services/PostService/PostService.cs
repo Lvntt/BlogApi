@@ -1,4 +1,4 @@
-using BlogApi.Data.Repositories;
+using BlogApi.Data.Repositories.UserRepo;
 using BlogApi.Data.Repositories.AuthorRepository;
 using BlogApi.Data.Repositories.CommunityRepository;
 using BlogApi.Data.Repositories.PostRepository;
@@ -86,17 +86,22 @@ public class PostService : IPostService
         };
 
         var posts = _postRepository.GetPagedPosts(postsQueryable, pagination);
-        var postsDto = posts.Select(post =>
+
+        User? user = null;
+        if (userId != null)
+        {
+            user = await _userRepository.GetUserById((Guid)userId);
+            if (user == null)
+            {
+                throw new KeyNotFoundException("User not found.");
+            }
+        }
+        
+        var postsDto = posts.Select((post, index) =>
             {
                 var hasLike = false;
-                if (userId != null)
+                if (user != null)
                 {
-                    var user = _userRepository.GetUserById((Guid)userId);
-                    if (user == null)
-                    {
-                        throw new KeyNotFoundException("User not found.");
-                    }
-
                     hasLike = _postRepository.DidUserLikePost(post, user);
                 }
                 var tagDtos = post.Tags?.Select(tag =>
@@ -107,6 +112,7 @@ public class PostService : IPostService
                         CreateTime = tag.CreateTime
                     }
                 ).ToList();
+                
                 return new PostDto
                 {
                     Id = post.Id,
@@ -136,7 +142,7 @@ public class PostService : IPostService
 
     public async Task<Guid> CreatePost(PostCreateDto request, Guid authorId)
     {
-        var user = _userRepository.GetUserById(authorId);
+        var user = await _userRepository.GetUserById(authorId);
         if (user == null)
         {
             throw new KeyNotFoundException("User not found.");
@@ -199,7 +205,7 @@ public class PostService : IPostService
         var hasLike = false;
         if (userId != null)
         {
-            var user = _userRepository.GetUserById((Guid)userId);
+            var user = await _userRepository.GetUserById((Guid)userId);
             if (user == null)
             {
                 throw new KeyNotFoundException("User not found.");
@@ -262,7 +268,7 @@ public class PostService : IPostService
             throw new KeyNotFoundException($"Post with Guid={postId} not found.");
         }
 
-        var user = _userRepository.GetUserById(userId);
+        var user = await _userRepository.GetUserById(userId);
         if (user == null)
         {
             throw new KeyNotFoundException("User not found.");
@@ -284,7 +290,7 @@ public class PostService : IPostService
             throw new KeyNotFoundException($"Post with Guid={postId} not found.");
         }
 
-        var user = _userRepository.GetUserById(userId);
+        var user = await _userRepository.GetUserById(userId);
         if (user == null)
         {
             throw new KeyNotFoundException("User not found.");
