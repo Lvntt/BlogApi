@@ -56,20 +56,20 @@ public class CommunityController : ControllerBase
 
     [Authorize]
     [HttpPost("create")]
-    public async Task<ActionResult<Guid>> CreateCommunity(CommunityCreateDto request)
+    public async Task<ActionResult<Guid>> CreateCommunity(CommunityCreateDto communityCreateDto)
     {
         var userId = (Guid)HttpContext.Items["UserId"]!;
 
-        return Ok(await _communityService.CreateCommunity(request, userId));
+        return Ok(await _communityService.CreateCommunity(communityCreateDto, userId));
     }
 
     [Authorize]
     [HttpPost("{id}/post")]
-    public async Task<ActionResult<Guid>> CreatePost(PostCreateDto request, Guid id)
+    public async Task<ActionResult<Guid>> CreatePost(PostCreateDto postCreateDto, Guid id)
     {
         var userId = (Guid)HttpContext.Items["UserId"]!;
 
-        return Ok(await _communityService.CreatePost(request, userId, id));
+        return Ok(await _communityService.CreatePost(postCreateDto, userId, id));
     }
 
     [Authorize]

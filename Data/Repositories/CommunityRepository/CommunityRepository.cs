@@ -1,4 +1,3 @@
-using BlogApi.Dtos;
 using BlogApi.Models;
 using BlogApi.Models.Types;
 using Microsoft.EntityFrameworkCore;
@@ -28,31 +27,32 @@ public class CommunityRepository : ICommunityRepository
 
     public List<CommunityMember> GetCommunityAdministrators(Community community)
     {
-        return community.Members.Where(member => member.Role == CommunityRole.Administrator).ToList();
+        return community.Members
+            .Where(member => member.Role == CommunityRole.Administrator)
+            .ToList();
     }
 
     public async Task AddCommunityMember(CommunityMember communityMember)
     {
         await _context.CommunityMembers.AddAsync(communityMember);
-        await _context.SaveChangesAsync();
     }
 
-    public async Task RemoveCommunityMember(CommunityMember communityMember)
+    public void RemoveCommunityMember(CommunityMember communityMember)
     {
         _context.CommunityMembers.Remove(communityMember);
-        await _context.SaveChangesAsync();
     }
 
     public async Task<Guid> CreateCommunity(Community community)
     {
         await _context.Communities.AddAsync(community);
-        await _context.SaveChangesAsync();
         return community.Id;
     }
 
     public async Task<List<CommunityMember>> GetUserCommunities(Guid userId)
     {
-        return await _context.CommunityMembers.Where(cm => cm.UserId == userId).ToListAsync();
+        return await _context.CommunityMembers
+            .Where(cm => cm.UserId == userId)
+            .ToListAsync();
     }
 
     public async Task<List<Community>> GetAllCommunities()
@@ -63,39 +63,34 @@ public class CommunityRepository : ICommunityRepository
     public async Task<CommunityRole?> GetUserRoleInCommunity(Guid communityId, Guid userId)
     {
         var user = await _context.CommunityMembers
-            .Where(cm => cm.CommunityId == communityId && cm.UserId == userId)
+            .Where(cm => 
+                cm.CommunityId == communityId 
+                && cm.UserId == userId)
             .FirstOrDefaultAsync();
         return user?.Role;
     }
 
-    public CommunityMember? GetSubscriber(Guid communityId, Guid userId)
+    public Task<CommunityMember?> GetSubscriber(Guid communityId, Guid userId)
     {
-        return _context.CommunityMembers.FirstOrDefault(cm =>
-            cm.CommunityId == communityId && cm.UserId == userId && cm.Role == CommunityRole.Subscriber);
+        return _context.CommunityMembers.FirstOrDefaultAsync(cm =>
+            cm.CommunityId == communityId 
+            && cm.UserId == userId 
+            && cm.Role == CommunityRole.Subscriber);
     }
 
-    public CommunityMember? GetAdministrator(Guid communityId, Guid userId)
+    public Task<CommunityMember?> GetAdministrator(Guid communityId, Guid userId)
     {
-        return _context.CommunityMembers.FirstOrDefault(cm =>
-            cm.CommunityId == communityId && cm.UserId == userId && cm.Role == CommunityRole.Administrator);
+        return _context.CommunityMembers.FirstOrDefaultAsync(cm =>
+            cm.CommunityId == communityId 
+            && cm.UserId == userId 
+            && cm.Role == CommunityRole.Administrator);
     }
 
-    public CommunityMember? GetCommunityMember(Guid communityId, Guid userId)
+    public Task<CommunityMember?> GetCommunityMember(Guid communityId, Guid userId)
     {
-        return _context.CommunityMembers.FirstOrDefault(cm =>
-            cm.CommunityId == communityId && cm.UserId == userId);
-    }
-
-    public async Task IncrementCommunitySubscribers(Community community)
-    {
-        community.SubscribersCount++;
-        await _context.SaveChangesAsync();
-    }
-    
-    public async Task DecrementCommunitySubscribers(Community community)
-    {
-        community.SubscribersCount--;
-        await _context.SaveChangesAsync();
+        return _context.CommunityMembers.FirstOrDefaultAsync(cm =>
+            cm.CommunityId == communityId 
+            && cm.UserId == userId);
     }
 
     public IQueryable<Post> GetCommunityPosts(Community community)
@@ -104,5 +99,11 @@ public class CommunityRepository : ICommunityRepository
             .Where(post => post.CommunityId == community.Id)
             .Include(post => post.Tags)
             .Include(post => post.LikedPosts);
+    }
+
+    // TODO ВЕЗДЕ убрать async/await, заменить await на return 
+    public Task Save()
+    {
+        return _context.SaveChangesAsync();
     }
 }

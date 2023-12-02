@@ -48,6 +48,27 @@ public static class PostMapper
         };
     }
     
+    public static Post MapToCommunityPost(PostCreateDto postCreateDto, User user, Community community, List<Tag> tags)
+    {
+        return new Post
+        {
+            Id = Guid.NewGuid(),
+            CreateTime = DateTime.UtcNow,
+            Title = postCreateDto.Title,
+            Description = postCreateDto.Description,
+            ReadingTime = postCreateDto.ReadingTime,
+            Image = postCreateDto.Image,
+            AuthorId = user.Id,
+            Author = user.FullName,
+            CommunityId = community.Id,
+            CommunityName = community.Name,
+            AddressId = postCreateDto.AddressId,
+            Likes = 0,
+            CommentsCount = 0,
+            Tags = tags
+        };
+    }
+    
     public static PostFullDto MapToPostFullDto(Post post, bool hasLike, List<TagDto> tagDtos, List<CommentDto> comments)
     {
         return new PostFullDto

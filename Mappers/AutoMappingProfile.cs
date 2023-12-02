@@ -11,5 +11,7 @@ public class AutoMappingProfile : Profile
         CreateMap<User, UserDto>();
         CreateMap<Tag, TagDto>();
         CreateMap<Comment, CommentDto>();
+        CreateMap<CommunityMember, CommunityUserDto>();
+        CreateMap<Community, CommunityDto>();
     }
 }

@@ -240,6 +240,7 @@ public class PostService : IPostService
             new Like { PostId = post.Id, UserId = user.Id }
         );
         post.Likes++;
+        // TODO increase author likes
         
         await _postRepository.Save();
     }
@@ -266,6 +267,7 @@ public class PostService : IPostService
 
         post.LikedPosts.Remove(existingLike);
         post.Likes--;
+        // TODO decrease author likes
         
         await _postRepository.Save();
     }

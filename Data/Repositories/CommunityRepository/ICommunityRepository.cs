@@ -1,4 +1,3 @@
-using BlogApi.Dtos;
 using BlogApi.Models;
 using BlogApi.Models.Types;
 
@@ -10,15 +9,14 @@ public interface ICommunityRepository
     Task<Community?> GetCommunityById(Guid communityId);
     List<CommunityMember> GetCommunityAdministrators(Community community);
     Task AddCommunityMember(CommunityMember communityMember);
-    Task RemoveCommunityMember(CommunityMember communityMember);
+    void RemoveCommunityMember(CommunityMember communityMember);
     Task<Guid> CreateCommunity(Community community);
     Task<List<CommunityMember>> GetUserCommunities(Guid userId);
     Task<List<Community>> GetAllCommunities();
     Task<CommunityRole?> GetUserRoleInCommunity(Guid communityId, Guid userId);
-    CommunityMember? GetSubscriber(Guid communityId, Guid userId);
-    CommunityMember? GetAdministrator(Guid communityId, Guid userId);
-    CommunityMember? GetCommunityMember(Guid communityId, Guid userId);
-    Task IncrementCommunitySubscribers(Community community);
-    Task DecrementCommunitySubscribers(Community community);
+    Task<CommunityMember?> GetSubscriber(Guid communityId, Guid userId);
+    Task<CommunityMember?> GetAdministrator(Guid communityId, Guid userId);
+    Task<CommunityMember?> GetCommunityMember(Guid communityId, Guid userId);
     IQueryable<Post> GetCommunityPosts(Community community);
+    Task Save();
 }
