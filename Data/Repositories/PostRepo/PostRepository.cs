@@ -99,7 +99,9 @@ public class PostRepository : IPostRepository
     public Task<Like?> GetExistingLike(Post post, User user)
     {
         return _context.Likes
-            .FirstOrDefaultAsync(like => like.PostId == post.Id && like.UserId == user.Id);
+            .FirstOrDefaultAsync(like => 
+                like.PostId == post.Id 
+                && like.UserId == user.Id);
     }
 
     public async Task Save()

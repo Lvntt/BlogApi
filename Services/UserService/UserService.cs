@@ -85,7 +85,6 @@ public class UserService : IUserService
         user.Gender = userEditDto.Gender;
         user.PhoneNumber = userEditDto.PhoneNumber;
         
-        _userRepository.EditUserProfile(user);
         await _userRepository.Save();
     }
 }

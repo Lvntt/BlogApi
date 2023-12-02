@@ -29,11 +29,6 @@ public class UserRepository : IUserRepository
         return _context.Users.FirstOrDefaultAsync(user => user.Id == id);
     }
 
-    public void EditUserProfile(User user)
-    {
-        _context.Entry(user).State = EntityState.Modified;
-    }
-
     public Task Save()
     {
         return _context.SaveChangesAsync();

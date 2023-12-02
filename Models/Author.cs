@@ -4,7 +4,6 @@ namespace BlogApi.Models;
 
 public class Author
 {
-    // TODO validation: check if the user exists
     [Key]
     public Guid UserId { get; set; }
     

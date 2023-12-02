@@ -17,7 +17,7 @@ public class TagController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<Tag>>> GetTags()
+    public async Task<ActionResult<List<TagDto>>> GetTags()
     {
         return Ok(await _tagService.GetTags());
     }
