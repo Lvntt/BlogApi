@@ -19,6 +19,5 @@ public interface IPostRepository
     Task<Post?> GetPost(Guid id);
     bool DidUserLikePost(Post post, User user);
     Task<Like?> GetExistingLike(Post post, User user);
-    Task AddLikeToPost(Post post, User user);
-    Task RemoveLikeFromPost(Post post, Like like);
+    Task Save();
 }

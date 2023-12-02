@@ -1,9 +1,11 @@
+using AutoMapper;
 using BlogApi.Data.Repositories.UserRepo;
 using BlogApi.Data.Repositories.AuthorRepository;
 using BlogApi.Data.Repositories.CommunityRepository;
 using BlogApi.Data.Repositories.PostRepository;
 using BlogApi.Data.Repositories.TagRepo;
 using BlogApi.Dtos;
+using BlogApi.Mappers;
 using BlogApi.Models;
 using Microsoft.IdentityModel.Tokens;
 
@@ -11,6 +13,7 @@ namespace BlogApi.Services.PostService;
 
 public class PostService : IPostService
 {
+    private readonly IMapper _mapper;
     private readonly IPostRepository _postRepository;
     private readonly ITagRepository _tagRepository;
     private readonly IUserRepository _userRepository;
@@ -18,13 +21,14 @@ public class PostService : IPostService
     private readonly ICommunityRepository _communityRepository;
 
     public PostService(IPostRepository postRepository, ITagRepository tagRepository, IUserRepository userRepository,
-        IAuthorRepository authorRepository, ICommunityRepository communityRepository)
+        IAuthorRepository authorRepository, ICommunityRepository communityRepository, IMapper mapper)
     {
         _postRepository = postRepository;
         _tagRepository = tagRepository;
         _userRepository = userRepository;
         _authorRepository = authorRepository;
         _communityRepository = communityRepository;
+        _mapper = mapper;
     }
 
     public async Task<PostPagedListDto> GetAllAvailablePosts(
@@ -43,6 +47,14 @@ public class PostService : IPostService
 
         if (!tags.IsNullOrEmpty())
         {
+            foreach (var guid in tags)
+            {
+                if (await _tagRepository.GetTagFromGuid(guid) == null)
+                {
+                    throw new KeyNotFoundException($"Tag with Guid={guid} not found.");
+                }
+            }
+
             postsQueryable = _postRepository.GetPostsByTagsId(postsQueryable, tags);
         }
 
@@ -66,18 +78,20 @@ public class PostService : IPostService
             postsQueryable = _postRepository.GetSortedPosts(postsQueryable, (SortingOption)sorting);
         }
 
-        if (onlyMyCommunities)
+        if (onlyMyCommunities && userId != null)
         {
-            if (userId != null)
-            {
-                var communityMembers = await _communityRepository.GetUserCommunities((Guid)userId);
-                postsQueryable = _postRepository.GetOnlyMyCommunitiesPosts(postsQueryable, communityMembers, (Guid)userId);
-            }
+            var communityMembers = await _communityRepository.GetUserCommunities((Guid)userId);
+            postsQueryable = _postRepository.GetOnlyMyCommunitiesPosts(postsQueryable, communityMembers, (Guid)userId);
         }
-        
+
         var postsCount = postsQueryable.Count();
         var paginationCount = !postsQueryable.IsNullOrEmpty() ? (int)Math.Ceiling((double)postsCount / size) : 0;
-        // TODO add page size validation (>0)
+
+        if (page < 1 || (paginationCount != 0 && page > paginationCount))
+        {
+            throw new InvalidOperationException("Invalid value for attribute page.");
+        }
+
         var pagination = new PageInfoModel
         {
             Size = size,
@@ -96,43 +110,23 @@ public class PostService : IPostService
                 throw new KeyNotFoundException("User not found.");
             }
         }
-        
-        var postsDto = posts.Select((post, index) =>
+
+        var postsDto = posts.Select(post =>
             {
                 var hasLike = false;
                 if (user != null)
                 {
                     hasLike = _postRepository.DidUserLikePost(post, user);
                 }
-                var tagDtos = post.Tags?.Select(tag =>
-                    new TagDto
-                    {
-                        Id = tag.Id,
-                        Name = tag.Name,
-                        CreateTime = tag.CreateTime
-                    }
-                ).ToList();
-                
-                return new PostDto
-                {
-                    Id = post.Id,
-                    CreateTime = post.CreateTime,
-                    Title = post.Title,
-                    Description = post.Description,
-                    ReadingTime = post.ReadingTime,
-                    Image = post.Image,
-                    AuthorId = post.AuthorId,
-                    Author = post.Author,
-                    CommunityId = post.CommunityId,
-                    CommunityName = post.CommunityName,
-                    AddressId = post.AddressId,
-                    Likes = post.Likes,
-                    HasLike = hasLike,
-                    CommentsCount = post.CommentsCount,
-                    Tags = tagDtos
-                };
+
+                var tagDtos = post.Tags
+                    .Select(tag => _mapper.Map<TagDto>(tag))
+                    .ToList();
+
+                return PostMapper.MapToPostDto(post, hasLike, tagDtos);
             }
         ).ToList();
+
         return new PostPagedListDto
         {
             Posts = postsDto,
@@ -140,43 +134,30 @@ public class PostService : IPostService
         };
     }
 
-    public async Task<Guid> CreatePost(PostCreateDto request, Guid authorId)
+    public async Task<Guid> CreatePost(PostCreateDto postCreateDto, Guid authorId)
     {
         var user = await _userRepository.GetUserById(authorId);
         if (user == null)
         {
             throw new KeyNotFoundException("User not found.");
         }
-        
-        // TODO replace exception with validation attribute?
+
         var tags = new List<Tag>();
-        if (!request.Tags.IsNullOrEmpty())
+        if (!postCreateDto.Tags.IsNullOrEmpty())
         {
-            foreach (var tagGuid in request.Tags)
+            foreach (var tagGuid in postCreateDto.Tags)
             {
-                var tag = await _tagRepository.GetTagFromGuid(tagGuid) 
-                          ?? throw new KeyNotFoundException($"Tag with Guid={tagGuid} not found.");
+                var tag = await _tagRepository.GetTagFromGuid(tagGuid);
+                if (tag == null)
+                {
+                    throw new KeyNotFoundException($"Tag with Guid={tagGuid} not found.");
+                }
+
                 tags.Add(tag);
             }
         }
 
-        var newPost = new Post
-        {
-            Id = Guid.NewGuid(),
-            CreateTime = DateTime.UtcNow,
-            Title = request.Title,
-            Description = request.Description,
-            ReadingTime = request.ReadingTime,
-            Image = request.Image,
-            AuthorId = user.Id,
-            Author = user.FullName,
-            CommunityId = null,
-            CommunityName = null,
-            AddressId = request.AddressId,
-            Likes = 0,
-            CommentsCount = 0,
-            Tags = tags
-        };
+        var newPost = PostMapper.MapToPost(postCreateDto, user, tags);
         // TODO add CommentsCount increment in Comments endpoints
 
         var postId = await _postRepository.AddPost(newPost);
@@ -196,6 +177,9 @@ public class PostService : IPostService
         {
             await _authorRepository.IncrementAuthorPosts(authorId);
         }
+
+        await _postRepository.Save();
+        await _authorRepository.Save();
 
         return postId;
     }
@@ -220,48 +204,15 @@ public class PostService : IPostService
             hasLike = _postRepository.DidUserLikePost(post, user);
         }
 
-        var tags = post.Tags?.Select(tag =>
-            new TagDto
-            {
-                Id = tag.Id,
-                Name = tag.Name,
-                CreateTime = tag.CreateTime
-            }
-        ).ToList();
+        var tagDtos = post.Tags
+            .Select(tag => _mapper.Map<TagDto>(tag))
+            .ToList();
 
-        var comments = post.Comments.Select(comment =>
-            new CommentDto
-            {
-                Id = comment.Id,
-                CreateTime = comment.CreateTime,
-                Content = comment.Content,
-                ModifiedDate = comment.ModifiedDate,
-                DeleteDate = comment.DeleteDate,
-                AuthorId = comment.AuthorId,
-                Author = comment.Author,
-                SubComments = comment.SubComments
-            }
-        ).ToList();
+        var comments = post.Comments
+            .Select(comment => _mapper.Map<CommentDto>(comment))
+            .ToList();
 
-        var postFullDto = new PostFullDto
-        {
-            Id = post.Id,
-            CreateTime = post.CreateTime,
-            Title = post.Title,
-            Description = post.Description,
-            ReadingTime = post.ReadingTime,
-            Image = post.Image,
-            AuthorId = post.AuthorId,
-            Author = post.Author,
-            CommunityId = post.CommunityId,
-            CommunityName = post.CommunityName,
-            AddressId = post.AddressId,
-            Likes = post.Likes,
-            HasLike = hasLike,
-            CommentsCount = post.CommentsCount,
-            Tags = tags,
-            Comments = comments
-        };
+        var postFullDto = PostMapper.MapToPostFullDto(post, hasLike, tagDtos, comments);
 
         return postFullDto;
     }
@@ -285,7 +236,12 @@ public class PostService : IPostService
             throw new InvalidOperationException("User has already liked this post.");
         }
 
-        await _postRepository.AddLikeToPost(post, user);
+        post.LikedPosts.Add(
+            new Like { PostId = post.Id, UserId = user.Id }
+        );
+        post.Likes++;
+        
+        await _postRepository.Save();
     }
 
     public async Task RemoveLikeFromPost(Guid postId, Guid userId)
@@ -308,6 +264,9 @@ public class PostService : IPostService
             throw new InvalidOperationException("User has not liked this post.");
         }
 
-        await _postRepository.RemoveLikeFromPost(post, existingLike);
+        post.LikedPosts.Remove(existingLike);
+        post.Likes--;
+        
+        await _postRepository.Save();
     }
 }

@@ -44,7 +44,7 @@ public class Post
     [Required]
     public int CommentsCount { get; set; }
     
-    public List<Tag>? Tags { get; set; } = new();
+    public List<Tag> Tags { get; set; } = new();
 
     [Required]
     public List<Comment> Comments { get; set; } = new();

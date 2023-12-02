@@ -1,3 +1,4 @@
+using AutoMapper;
 using BlogApi.Data.Repositories.AuthorRepository;
 using BlogApi.Data.Repositories.CommunityRepository;
 using BlogApi.Data.Repositories.PostRepository;
@@ -12,6 +13,7 @@ namespace BlogApi.Services.CommunityService;
 
 public class CommunityService : ICommunityService
 {
+    private readonly IMapper _mapper;
     private readonly ICommunityRepository _communityRepository;
     private readonly IUserRepository _userRepository;
     private readonly ITagRepository _tagRepository;
@@ -19,13 +21,14 @@ public class CommunityService : ICommunityService
     private readonly IAuthorRepository _authorRepository;
 
     public CommunityService(ICommunityRepository communityRepository, IUserRepository userRepository,
-        ITagRepository tagRepository, IPostRepository postRepository, IAuthorRepository authorRepository)
+        ITagRepository tagRepository, IPostRepository postRepository, IAuthorRepository authorRepository, IMapper mapper)
     {
         _communityRepository = communityRepository;
         _userRepository = userRepository;
         _tagRepository = tagRepository;
         _postRepository = postRepository;
         _authorRepository = authorRepository;
+        _mapper = mapper;
     }
 
     public async Task<Guid> CreateCommunity(CommunityCreateDto request, Guid userId)
@@ -270,6 +273,9 @@ public class CommunityService : ICommunityService
             await _authorRepository.IncrementAuthorPosts(authorId);
         }
 
+        await _postRepository.Save();
+        await _authorRepository.Save();
+
         return postId;
     }
 
@@ -295,9 +301,15 @@ public class CommunityService : ICommunityService
         }
         
         var communityPostsQueryable = _communityRepository.GetCommunityPosts(community);
+        
         var postsCount = communityPostsQueryable.Count();
         var paginationCount = !communityPostsQueryable.IsNullOrEmpty() ? (int)Math.Ceiling((double)postsCount / size) : 0;
-        // TODO add page size validation (>0)
+        
+        if (page < 1 || (paginationCount != 0 && page > paginationCount))
+        {
+            throw new InvalidOperationException("Invalid value for attribute page.");
+        }
+        
         var pagination = new PageInfoModel
         {
             Size = size,
@@ -335,7 +347,7 @@ public class CommunityService : ICommunityService
                     hasLike = _postRepository.DidUserLikePost(post, user);
                 }
                 
-                var tagDtos = post.Tags?.Select(tag =>
+                var tagDtos = post.Tags.Select(tag =>
                     new TagDto
                     {
                         Id = tag.Id,

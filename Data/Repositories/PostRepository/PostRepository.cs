@@ -22,12 +22,12 @@ public class PostRepository : IPostRepository
 
     public IQueryable<Post> GetPostsByTagsId(IQueryable<Post> posts, List<Guid> tagsId)
     {
-        // TODO not working without ToList()?
-        return posts.ToList().Where(post =>
-            post.Tags != null && post.Tags.Select(tag => tag.Id)
-                .Intersect(tagsId).Count() == tagsId.Count).AsQueryable();
-        // return posts.Where(post => post.Tags != null && post.Tags.Intersect(tags).Count() == tags.Count);
-        // return posts.Where(post => post.Tags != null && post.Tags.Count(tag => tags.Contains(tag)) == tags.Count);
+        return posts
+            .ToList()
+            .Where(post => post.Tags
+                    .Select(tag => tag.Id)
+                    .Intersect(tagsId).Count() == tagsId.Count)
+            .AsQueryable();
     }
 
     public IQueryable<Post> GetPostsByAuthor(IQueryable<Post> posts, string query)
@@ -69,13 +69,15 @@ public class PostRepository : IPostRepository
 
     public List<Post> GetPagedPosts(IQueryable<Post> posts, PageInfoModel pagination)
     {
-        return posts.Skip((pagination.Current - 1) * pagination.Size).Take(pagination.Size).ToList();
+        return posts
+            .Skip((pagination.Current - 1) * pagination.Size)
+            .Take(pagination.Size)
+            .ToList();
     }
 
     public async Task<Guid> AddPost(Post post)
     {
         await _context.Posts.AddAsync(post);
-        await _context.SaveChangesAsync();
         return post.Id;
     }
 
@@ -99,17 +101,8 @@ public class PostRepository : IPostRepository
             .FirstOrDefaultAsync(like => like.PostId == post.Id && like.UserId == user.Id);
     }
 
-    public async Task AddLikeToPost(Post post, User user)
+    public async Task Save()
     {
-        post.LikedPosts.Add(new Like { PostId = post.Id, UserId = user.Id });
-        post.Likes++;
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task RemoveLikeFromPost(Post post, Like like)
-    {
-        post.LikedPosts.Remove(like);
-        post.Likes--;
         await _context.SaveChangesAsync();
     }
 }

@@ -10,5 +10,6 @@ public class AutoMappingProfile : Profile
     {
         CreateMap<User, UserDto>();
         CreateMap<Tag, TagDto>();
+        CreateMap<Comment, CommentDto>();
     }
 }
