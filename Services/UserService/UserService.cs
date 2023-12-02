@@ -1,6 +1,6 @@
 using System.Security.Authentication;
 using AutoMapper;
-using BlogApi.Data.Repositories;
+using BlogApi.Data.Repositories.TokenBlacklistRepo;
 using BlogApi.Dtos;
 using BlogApi.Models;
 using BlogApi.Data.Repositories.UserRepo;
@@ -57,6 +57,7 @@ public class UserService : IUserService
     public async Task Logout(TokenModel token)
     {
         await _tokenBlacklistRepository.BlacklistToken(token);
+        await _tokenBlacklistRepository.Save();
     }
 
     public async Task<UserDto> GetUserProfile(Guid id)

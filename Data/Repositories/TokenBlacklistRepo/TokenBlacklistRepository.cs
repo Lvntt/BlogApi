@@ -1,7 +1,7 @@
 using BlogApi.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace BlogApi.Data.Repositories;
+namespace BlogApi.Data.Repositories.TokenBlacklistRepo;
 
 public class TokenBlacklistRepository : ITokenBlacklistRepository
 {
@@ -13,16 +13,18 @@ public class TokenBlacklistRepository : ITokenBlacklistRepository
     }
     
     
-    public async Task<bool> BlacklistToken(TokenModel token)
+    public async Task BlacklistToken(TokenModel token)
     {
-        _context.InvalidTokens.Add(token);
-        await _context.SaveChangesAsync();
-        return true;
+        await _context.InvalidTokens.AddAsync(token);
     }
 
     public async Task<TokenModel?> GetTokenFromBlacklist(TokenModel token)
     {
         return await _context.InvalidTokens.FirstOrDefaultAsync(t => t.Token == token.Token);
     }
-    
+
+    public async Task Save()
+    {
+        await _context.SaveChangesAsync();
+    }
 }

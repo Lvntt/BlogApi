@@ -1,4 +1,4 @@
-using BlogApi.Data.Repositories;
+using BlogApi.Data.Repositories.TokenBlacklistRepo;
 using BlogApi.Models;
 using BlogApi.Services.JwtService;
 
