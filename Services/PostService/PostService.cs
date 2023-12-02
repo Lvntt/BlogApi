@@ -175,7 +175,7 @@ public class PostService : IPostService
         }
         else
         {
-            await _authorRepository.IncrementAuthorPosts(authorId);
+            existingAuthor.Posts++;
         }
 
         await _postRepository.Save();
@@ -230,6 +230,12 @@ public class PostService : IPostService
         {
             throw new KeyNotFoundException("User not found.");
         }
+        
+        var author = await _authorRepository.GetAuthorById(post.AuthorId);
+        if (author == null)
+        {
+            throw new KeyNotFoundException("Author not found.");
+        }
 
         if (_postRepository.DidUserLikePost(post, user))
         {
@@ -240,9 +246,10 @@ public class PostService : IPostService
             new Like { PostId = post.Id, UserId = user.Id }
         );
         post.Likes++;
-        // TODO increase author likes
+        author.Likes++;
         
         await _postRepository.Save();
+        await _authorRepository.Save();
     }
 
     public async Task RemoveLikeFromPost(Guid postId, Guid userId)
@@ -264,11 +271,18 @@ public class PostService : IPostService
         {
             throw new InvalidOperationException("User has not liked this post.");
         }
+        
+        var author = await _authorRepository.GetAuthorById(post.AuthorId);
+        if (author == null)
+        {
+            throw new KeyNotFoundException("Author not found.");
+        }
 
         post.LikedPosts.Remove(existingLike);
         post.Likes--;
-        // TODO decrease author likes
+        author.Likes--;
         
         await _postRepository.Save();
+        await _authorRepository.Save();
     }
 }

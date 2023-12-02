@@ -205,7 +205,7 @@ public class CommunityService : ICommunityService
         }
         else
         {
-            await _authorRepository.IncrementAuthorPosts(authorId);
+            existingAuthor.Posts++;
         }
 
         await _postRepository.Save();
