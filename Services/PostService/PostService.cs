@@ -149,10 +149,16 @@ public class PostService : IPostService
         }
         
         // TODO replace exception with validation attribute?
-        var tags = request.Tags?.Select(tagGuid => _tagRepository.GetTagFromGuid(tagGuid)
-                                                   ?? throw new KeyNotFoundException(
-                                                       $"Tag with Guid={tagGuid} not found.")
-        ).ToList();
+        var tags = new List<Tag>();
+        if (!request.Tags.IsNullOrEmpty())
+        {
+            foreach (var tagGuid in request.Tags)
+            {
+                var tag = await _tagRepository.GetTagFromGuid(tagGuid) 
+                          ?? throw new KeyNotFoundException($"Tag with Guid={tagGuid} not found.");
+                tags.Add(tag);
+            }
+        }
 
         var newPost = new Post
         {

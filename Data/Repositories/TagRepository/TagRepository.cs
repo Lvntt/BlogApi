@@ -17,11 +17,9 @@ public class TagRepository : ITagRepository
         return await _context.Tags.FirstOrDefaultAsync(tag => tag.Name == name);
     }
 
-    public async Task<bool> AddTag(Tag tag)
+    public async Task AddTag(Tag tag)
     {
         await _context.Tags.AddAsync(tag);
-        await _context.SaveChangesAsync();
-        return true;
     }
 
     public async Task<List<Tag>> GetTags()
@@ -29,8 +27,13 @@ public class TagRepository : ITagRepository
         return await _context.Tags.ToListAsync();
     }
 
-    public Tag? GetTagFromGuid(Guid id)
+    public Task<Tag?> GetTagFromGuid(Guid id)
     {
-        return _context.Tags.FirstOrDefault(tag => tag.Id == id);
+        return _context.Tags.FirstOrDefaultAsync(tag => tag.Id == id);
+    }
+
+    public async Task Save()
+    {
+        await _context.SaveChangesAsync();
     }
 }

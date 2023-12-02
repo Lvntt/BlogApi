@@ -85,7 +85,7 @@ public class AddressRepository : IAddressRepository
                   && asAddrObj.Isactual == 1
                   && asAddrObj.Objectguid == objectGuid
             select new string(asAdmHierarchy.Path)
-        ).FirstOrDefaultAsync() ?? throw new KeyNotFoundException($"Could not find object with ObjectGuid={objectGuid}.");
+        ).FirstOrDefaultAsync() ?? throw new KeyNotFoundException($"Could not find address object with ObjectGuid={objectGuid}.");
 
         var parentObjectIds = addressPath.Split(".").Select(e => Convert.ToInt64(e)).ToList();
         foreach (var parentObjectId in parentObjectIds)

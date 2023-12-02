@@ -23,9 +23,9 @@ public class TagController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateTag(TagCreateDto request)
+    public async Task<IActionResult> CreateTag(TagCreateDto tagCreateDto)
     {
-        await _tagService.CreateTag(request);
+        await _tagService.CreateTag(tagCreateDto);
         
         return Ok();
     }
