@@ -14,9 +14,9 @@ public class UserRepository : IUserRepository
         _context = context;
     }
     
-    public async Task<User?> GetUserByEmail(string email)
+    public Task<User?> GetUserByEmail(string email)
     {
-        return await _context.Users.FirstOrDefaultAsync(user => user.Email == email);
+        return  _context.Users.FirstOrDefaultAsync(user => user.Email == email);
     }
 
     public async Task AddUser(User user)
@@ -34,8 +34,8 @@ public class UserRepository : IUserRepository
         _context.Entry(user).State = EntityState.Modified;
     }
 
-    public async Task Save()
+    public Task Save()
     {
-        await _context.SaveChangesAsync();
+        return _context.SaveChangesAsync();
     }
 }

@@ -82,9 +82,9 @@ public class PostRepository : IPostRepository
         return post.Id;
     }
 
-    public async Task<Post?> GetPost(Guid id)
+    public Task<Post?> GetPost(Guid id)
     {
-        return await _context.Posts
+        return _context.Posts
             .Include(post => post.Tags)
             .Include(post => post.Comments)
             .Include(post => post.LikedPosts)
@@ -96,9 +96,9 @@ public class PostRepository : IPostRepository
         return post.LikedPosts.Any(liked => liked.UserId == user.Id);
     }
 
-    public async Task<Like?> GetExistingLike(Post post, User user)
+    public Task<Like?> GetExistingLike(Post post, User user)
     {
-        return await _context.Likes
+        return _context.Likes
             .FirstOrDefaultAsync(like => like.PostId == post.Id && like.UserId == user.Id);
     }
 

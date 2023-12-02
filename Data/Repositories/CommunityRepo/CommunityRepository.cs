@@ -14,14 +14,14 @@ public class CommunityRepository : ICommunityRepository
         _context = context;
     }
 
-    public async Task<Community?> GetCommunityByName(string name)
+    public Task<Community?> GetCommunityByName(string name)
     {
-        return await _context.Communities.FirstOrDefaultAsync(community => community.Name == name);
+        return _context.Communities.FirstOrDefaultAsync(community => community.Name == name);
     }
 
-    public async Task<Community?> GetCommunityById(Guid communityId)
+    public Task<Community?> GetCommunityById(Guid communityId)
     {
-        return await _context.Communities
+        return _context.Communities
             .Include(community => community.Members)
             .FirstOrDefaultAsync(community => community.Id == communityId);
     }
@@ -49,16 +49,16 @@ public class CommunityRepository : ICommunityRepository
         return community.Id;
     }
 
-    public async Task<List<CommunityMember>> GetUserCommunities(Guid userId)
+    public Task<List<CommunityMember>> GetUserCommunities(Guid userId)
     {
-        return await _context.CommunityMembers
+        return _context.CommunityMembers
             .Where(cm => cm.UserId == userId)
             .ToListAsync();
     }
 
-    public async Task<List<Community>> GetAllCommunities()
+    public Task<List<Community>> GetAllCommunities()
     {
-        return await _context.Communities.ToListAsync();
+        return _context.Communities.ToListAsync();
     }
 
     public async Task<CommunityRole?> GetUserRoleInCommunity(Guid communityId, Guid userId)
@@ -101,8 +101,7 @@ public class CommunityRepository : ICommunityRepository
             .Include(post => post.Tags)
             .Include(post => post.LikedPosts);
     }
-
-    // TODO ВЕЗДЕ убрать async/await, заменить await на return 
+    
     public Task Save()
     {
         return _context.SaveChangesAsync();

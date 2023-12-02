@@ -13,9 +13,9 @@ public class AuthorRepository : IAuthorRepository
         _context = context;
     }
 
-    public async Task<Author?> GetAuthorById(Guid id)
+    public Task<Author?> GetAuthorById(Guid id)
     {
-        return await _context.Authors.FirstOrDefaultAsync(author => author.UserId == id);
+        return _context.Authors.FirstOrDefaultAsync(author => author.UserId == id);
     }
 
     public async Task AddAuthor(Author author)
@@ -23,8 +23,8 @@ public class AuthorRepository : IAuthorRepository
         await _context.Authors.AddAsync(author);
     }
 
-    public async Task Save()
+    public Task Save()
     {
-        await _context.SaveChangesAsync();
+        return _context.SaveChangesAsync();
     }
 }

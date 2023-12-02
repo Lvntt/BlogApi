@@ -13,9 +13,9 @@ public class TagRepository : ITagRepository
         _context = context;
     }
 
-    public async Task<Tag?> GetTagByName(string name)
+    public Task<Tag?> GetTagByName(string name)
     {
-        return await _context.Tags.FirstOrDefaultAsync(tag => tag.Name == name);
+        return _context.Tags.FirstOrDefaultAsync(tag => tag.Name == name);
     }
 
     public async Task AddTag(Tag tag)
@@ -23,9 +23,9 @@ public class TagRepository : ITagRepository
         await _context.Tags.AddAsync(tag);
     }
 
-    public async Task<List<Tag>> GetTags()
+    public Task<List<Tag>> GetTags()
     {
-        return await _context.Tags.ToListAsync();
+        return _context.Tags.ToListAsync();
     }
 
     public Task<Tag?> GetTagFromGuid(Guid id)

@@ -19,13 +19,13 @@ public class TokenBlacklistRepository : ITokenBlacklistRepository
         await _context.InvalidTokens.AddAsync(token);
     }
 
-    public async Task<TokenModel?> GetTokenFromBlacklist(TokenModel token)
+    public Task<TokenModel?> GetTokenFromBlacklist(TokenModel token)
     {
-        return await _context.InvalidTokens.FirstOrDefaultAsync(t => t.Token == token.Token);
+        return _context.InvalidTokens.FirstOrDefaultAsync(t => t.Token == token.Token);
     }
 
-    public async Task Save()
+    public Task Save()
     {
-        await _context.SaveChangesAsync();
+        return _context.SaveChangesAsync();
     }
 }
