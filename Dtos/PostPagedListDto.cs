@@ -1,3 +1,5 @@
+using BlogApi.Models;
+
 namespace BlogApi.Dtos;
 
 public class PostPagedListDto

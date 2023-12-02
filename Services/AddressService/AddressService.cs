@@ -1,4 +1,4 @@
-using BlogApi.Data.Repositories.AddressRepository;
+using BlogApi.Data.Repositories.AddressRepo;
 using BlogApi.Dtos;
 
 namespace BlogApi.Services.AddressService;

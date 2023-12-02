@@ -1,7 +1,7 @@
-using BlogApi.Dtos;
 using BlogApi.Models;
+using BlogApi.Models.Types;
 
-namespace BlogApi.Data.Repositories.PostRepository;
+namespace BlogApi.Data.Repositories.PostRepo;
 
 public interface IPostRepository
 {

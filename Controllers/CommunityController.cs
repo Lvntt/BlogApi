@@ -1,6 +1,7 @@
 using BlogApi.Dtos;
 using BlogApi.Dtos.ValidationAttributes;
 using BlogApi.Models;
+using BlogApi.Models.Types;
 using BlogApi.Services.CommunityService;
 using Microsoft.AspNetCore.Mvc;
 

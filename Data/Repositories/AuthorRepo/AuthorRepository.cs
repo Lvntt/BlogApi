@@ -1,7 +1,8 @@
+using BlogApi.Data.DbContext;
 using BlogApi.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace BlogApi.Data.Repositories.AuthorRepository;
+namespace BlogApi.Data.Repositories.AuthorRepo;
 
 public class AuthorRepository : IAuthorRepository
 {

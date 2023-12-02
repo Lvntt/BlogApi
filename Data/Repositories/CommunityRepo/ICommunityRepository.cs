@@ -1,7 +1,7 @@
 using BlogApi.Models;
 using BlogApi.Models.Types;
 
-namespace BlogApi.Data.Repositories.CommunityRepository;
+namespace BlogApi.Data.Repositories.CommunityRepo;
 
 public interface ICommunityRepository
 {

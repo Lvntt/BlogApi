@@ -1,6 +1,6 @@
 using BlogApi.Models;
 
-namespace BlogApi.Data.Repositories.AuthorRepository;
+namespace BlogApi.Data.Repositories.AuthorRepo;
 
 public interface IAuthorRepository
 {

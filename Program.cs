@@ -1,12 +1,10 @@
 using System.Text;
-using BlogApi;
-using BlogApi.Context;
-using BlogApi.Data.Repositories;
+using BlogApi.Data.DbContext;
+using BlogApi.Data.Repositories.AddressRepo;
 using BlogApi.Data.Repositories.UserRepo;
-using BlogApi.Data.Repositories.AddressRepository;
-using BlogApi.Data.Repositories.AuthorRepository;
-using BlogApi.Data.Repositories.CommunityRepository;
-using BlogApi.Data.Repositories.PostRepository;
+using BlogApi.Data.Repositories.AuthorRepo;
+using BlogApi.Data.Repositories.CommunityRepo;
+using BlogApi.Data.Repositories.PostRepo;
 using BlogApi.Data.Repositories.TagRepo;
 using BlogApi.Data.Repositories.TokenBlacklistRepo;
 using BlogApi.Mappers;

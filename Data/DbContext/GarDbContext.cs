@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using BlogApi.Migrations;
+﻿using BlogApi.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace BlogApi.Context;
+namespace BlogApi.Data.DbContext;
 
-public partial class GarDbContext : DbContext
+public partial class GarDbContext : Microsoft.EntityFrameworkCore.DbContext
 {
     public GarDbContext()
     {

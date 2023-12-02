@@ -1,6 +1,6 @@
 using BlogApi.Dtos;
 
-namespace BlogApi.Data.Repositories.AddressRepository;
+namespace BlogApi.Data.Repositories.AddressRepo;
 
 public interface IAddressRepository
 {

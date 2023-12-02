@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace BlogApi.Migrations;
+﻿namespace BlogApi.Models;
 
 /// <summary>
 /// Сведения по номерам домов улиц городов и населенных пунктов

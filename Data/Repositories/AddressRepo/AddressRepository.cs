@@ -1,8 +1,8 @@
-using BlogApi.Context;
+using BlogApi.Data.DbContext;
 using BlogApi.Dtos;
 using Microsoft.EntityFrameworkCore;
 
-namespace BlogApi.Data.Repositories.AddressRepository;
+namespace BlogApi.Data.Repositories.AddressRepo;
 
 public class AddressRepository : IAddressRepository
 {

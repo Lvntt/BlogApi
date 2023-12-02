@@ -1,8 +1,9 @@
+using BlogApi.Data.DbContext;
 using BlogApi.Models;
 using BlogApi.Models.Types;
 using Microsoft.EntityFrameworkCore;
 
-namespace BlogApi.Data.Repositories.CommunityRepository;
+namespace BlogApi.Data.Repositories.CommunityRepo;
 
 public class CommunityRepository : ICommunityRepository
 {

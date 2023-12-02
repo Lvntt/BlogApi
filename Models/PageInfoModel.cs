@@ -1,4 +1,4 @@
-namespace BlogApi.Dtos;
+namespace BlogApi.Models;
 
 public class PageInfoModel
 {

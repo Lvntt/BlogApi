@@ -1,8 +1,9 @@
-using BlogApi.Dtos;
+using BlogApi.Data.DbContext;
 using BlogApi.Models;
+using BlogApi.Models.Types;
 using Microsoft.EntityFrameworkCore;
 
-namespace BlogApi.Data.Repositories.PostRepository;
+namespace BlogApi.Data.Repositories.PostRepo;
 
 public class PostRepository : IPostRepository
 {

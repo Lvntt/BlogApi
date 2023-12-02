@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using BlogApi.Data.Repositories.AddressRepository;
+using BlogApi.Data.Repositories.AddressRepo;
 
 namespace BlogApi.Dtos.ValidationAttributes;
 

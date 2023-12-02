@@ -1,5 +1,6 @@
 using BlogApi.Dtos;
 using BlogApi.Models;
+using BlogApi.Models.Types;
 
 namespace BlogApi.Services.PostService;
 
