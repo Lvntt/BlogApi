@@ -2,7 +2,7 @@ using BlogApi.Data.Repositories.UserRepo;
 using BlogApi.Data.Repositories.AuthorRepository;
 using BlogApi.Data.Repositories.CommunityRepository;
 using BlogApi.Data.Repositories.PostRepository;
-using BlogApi.Data.Repositories.TagRepository;
+using BlogApi.Data.Repositories.TagRepo;
 using BlogApi.Dtos;
 using BlogApi.Models;
 using Microsoft.IdentityModel.Tokens;

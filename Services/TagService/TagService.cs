@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using BlogApi.Data.Repositories.TagRepository;
+using BlogApi.Data.Repositories.TagRepo;
 using BlogApi.Dtos;
 using BlogApi.Models;
 

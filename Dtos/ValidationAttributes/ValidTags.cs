@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using BlogApi.Data.Repositories.TagRepository;
+using BlogApi.Data.Repositories.TagRepo;
 
 namespace BlogApi.Dtos.ValidationAttributes;
 

@@ -7,7 +7,7 @@ using BlogApi.Data.Repositories.AddressRepository;
 using BlogApi.Data.Repositories.AuthorRepository;
 using BlogApi.Data.Repositories.CommunityRepository;
 using BlogApi.Data.Repositories.PostRepository;
-using BlogApi.Data.Repositories.TagRepository;
+using BlogApi.Data.Repositories.TagRepo;
 using BlogApi.Mappers;
 using BlogApi.Middlewares;
 using BlogApi.Services.AddressService;
