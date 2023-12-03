@@ -13,6 +13,11 @@ public class AuthorRepository : IAuthorRepository
         _context = context;
     }
 
+    public Task<List<Author>> GetAllAuthors()
+    {
+        return _context.Authors.ToListAsync();
+    }
+
     public Task<Author?> GetAuthorById(Guid id)
     {
         return _context.Authors.FirstOrDefaultAsync(author => author.UserId == id);

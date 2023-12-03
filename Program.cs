@@ -10,6 +10,7 @@ using BlogApi.Data.Repositories.TokenBlacklistRepo;
 using BlogApi.Mappers;
 using BlogApi.Middlewares;
 using BlogApi.Services.AddressService;
+using BlogApi.Services.AuthorService;
 using BlogApi.Services.CommunityService;
 using BlogApi.Services.JwtService;
 using BlogApi.Services.PostService;
@@ -50,6 +51,7 @@ builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<ICommunityService, CommunityService>();
+builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
 builder.Services.AddTransient<JwtMiddleware>();
 
