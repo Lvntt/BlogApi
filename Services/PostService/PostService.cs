@@ -159,7 +159,6 @@ public class PostService : IPostService
         }
 
         var newPost = PostMapper.MapToPost(postCreateDto, user, tags);
-        // TODO add CommentsCount increment in Comments endpoints
 
         var postId = await _postRepository.AddPost(newPost);
         var existingAuthor = await _authorRepository.GetAuthorById(authorId);

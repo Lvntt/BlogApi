@@ -13,5 +13,6 @@ public class AutoMappingProfile : Profile
         CreateMap<Comment, CommentDto>();
         CreateMap<CommunityMember, CommunityUserDto>();
         CreateMap<Community, CommunityDto>();
+        CreateMap<Comment, CommentDto>();
     }
 }

@@ -78,8 +78,7 @@ public class GlobalExceptionHandlingMiddleware : IMiddleware
         } 
         catch (Exception e)
         {
-            _logger.LogError(e, $"An unexpected error occured. \n" +
-                                $"StackTrace: {e.StackTrace}");
+            _logger.LogError(e, $"An unexpected error occured. StackTrace: \n \t\t {e.StackTrace}");
             
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             

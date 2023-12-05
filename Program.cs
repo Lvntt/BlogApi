@@ -3,14 +3,17 @@ using BlogApi.Data.DbContext;
 using BlogApi.Data.Repositories.AddressRepo;
 using BlogApi.Data.Repositories.UserRepo;
 using BlogApi.Data.Repositories.AuthorRepo;
+using BlogApi.Data.Repositories.CommentRepo;
 using BlogApi.Data.Repositories.CommunityRepo;
 using BlogApi.Data.Repositories.PostRepo;
 using BlogApi.Data.Repositories.TagRepo;
 using BlogApi.Data.Repositories.TokenBlacklistRepo;
 using BlogApi.Mappers;
 using BlogApi.Middlewares;
+using BlogApi.Models;
 using BlogApi.Services.AddressService;
 using BlogApi.Services.AuthorService;
+using BlogApi.Services.CommentService;
 using BlogApi.Services.CommunityService;
 using BlogApi.Services.JwtService;
 using BlogApi.Services.PostService;
@@ -45,6 +48,7 @@ builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
 builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<ICommunityRepository, CommunityRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
@@ -52,8 +56,8 @@ builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<ICommunityService, CommunityService>();
 builder.Services.AddScoped<IAuthorService, AuthorService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
-builder.Services.AddTransient<JwtMiddleware>();
 
 builder.Services.AddAutoMapper(typeof(AutoMappingProfile));
 
@@ -81,6 +85,23 @@ builder.Services.AddAuthentication(options =>
             return before <= utcNow && utcNow <= expires;
         }
     };
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            var jwtService = context.HttpContext.RequestServices.GetRequiredService<IJwtService>();
+            var tokenBlacklistRepository =
+                context.HttpContext.RequestServices.GetRequiredService<ITokenBlacklistRepository>();
+            var token = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var userId = jwtService.ValidateToken(token);
+            var isTokenInBlacklist =
+                await tokenBlacklistRepository.GetTokenFromBlacklist(new TokenModel { Token = token }) != null;
+            if (userId == null || isTokenInBlacklist)
+            {
+                context.Fail("Unauthorized");
+            }
+        }
+    };
 });
 
 var app = builder.Build();
@@ -97,7 +118,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
-app.UseMiddleware<JwtMiddleware>();
 
 app.MapControllers();
 

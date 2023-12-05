@@ -1,8 +1,8 @@
+using System.Security.Claims;
 using BlogApi.Dtos;
-using BlogApi.Dtos.ValidationAttributes;
-using BlogApi.Models;
 using BlogApi.Models.Types;
 using BlogApi.Services.PostService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BlogApi.Controllers;
@@ -13,6 +13,22 @@ public class PostController : ControllerBase
 {
     private readonly IPostService _postService;
 
+    private Guid? UserId
+    {
+        get
+        {
+            var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
+            var claims = identity.Claims;
+            var rawUserId = claims.FirstOrDefault(x => x.Type == "id")?.Value;
+            if (Guid.TryParse(rawUserId, out var userId))
+            {
+                return userId;
+            }
+
+            return null;
+        }
+    }
+    
     public PostController(IPostService postService)
     {
         _postService = postService;
@@ -31,10 +47,8 @@ public class PostController : ControllerBase
         [FromQuery] int size = 5
     )
     {
-        var userId = (Guid?)HttpContext.Items["UserId"];
-        
         return Ok(
-            await _postService.GetAllAvailablePosts(userId, tags, author, min, max, sorting, onlyMyCommunities, page, size)
+            await _postService.GetAllAvailablePosts((Guid)UserId!, tags, author, min, max, sorting, onlyMyCommunities, page, size)
         );
     }
 
@@ -42,27 +56,21 @@ public class PostController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Guid>> CreatePost(PostCreateDto request)
     {
-        var userId = (Guid)HttpContext.Items["UserId"]!;
-
-        return Ok(await _postService.CreatePost(request, userId));
+        return Ok(await _postService.CreatePost(request, (Guid)UserId!));
     }
 
     [AllowAnonymous]
     [HttpGet("{postId}")]
     public async Task<ActionResult<PostFullDto>> GetPostInfo(Guid postId)
     {
-        var userId = (Guid?)HttpContext.Items["UserId"];
-
-        return Ok(await _postService.GetPostInfo(postId, userId));
+        return Ok(await _postService.GetPostInfo(postId, (Guid)UserId!));
     }
 
     [Authorize]
     [HttpPost("{postId}/like")]
     public async Task<IActionResult> AddLikeToPost(Guid postId)
     {
-        var userId = (Guid)HttpContext.Items["UserId"]!;
-
-        await _postService.AddLikeToPost(postId, userId);
+        await _postService.AddLikeToPost(postId, (Guid)UserId!);
         return Ok();
     }
 
@@ -70,9 +78,7 @@ public class PostController : ControllerBase
     [HttpDelete("{postId}/like")]
     public async Task<IActionResult> RemoveLikeFromPost(Guid postId)
     {
-        var userId = (Guid)HttpContext.Items["UserId"]!;
-
-        await _postService.RemoveLikeFromPost(postId, userId);
+        await _postService.RemoveLikeFromPost(postId, (Guid)UserId!);
         return Ok();
     }
 }

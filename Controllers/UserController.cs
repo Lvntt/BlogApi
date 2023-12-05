@@ -1,8 +1,9 @@
+using System.Security.Claims;
 using BlogApi.Dtos;
-using BlogApi.Dtos.ValidationAttributes;
 using BlogApi.Models;
 using BlogApi.Services.UserService;
 using BlogApi.Services.JwtService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BlogApi.Controllers;
@@ -14,12 +15,28 @@ public class UserController : ControllerBase
     private readonly IUserService _userService;
     private readonly IJwtService _jwtService;
 
+    private Guid? UserId
+    {
+        get
+        {
+            var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
+            var claims = identity.Claims;
+            var rawUserId = claims.FirstOrDefault(x => x.Type == "id")?.Value;
+            if (Guid.TryParse(rawUserId, out var userId))
+            {
+                return userId;
+            }
+
+            return null;
+        }
+    }
+    
     public UserController(IUserService userService, IJwtService jwtService)
     {
         _userService = userService;
         _jwtService = jwtService;
     }
-
+    
     [HttpPost("register")]
     public async Task<ActionResult<TokenModel>> Register([FromBody] UserRegisterDto userRegisterDto)
     {
@@ -54,20 +71,16 @@ public class UserController : ControllerBase
 
     [Authorize]
     [HttpGet("profile")]
-    public ActionResult<UserDto> GetUserProfile()
+    public async Task<ActionResult<UserDto>> GetUserProfile()
     {
-        var userId = (Guid)HttpContext.Items["UserId"]!;
-        
-        return Ok(_userService.GetUserProfile(userId));
+        return Ok(await _userService.GetUserProfile((Guid)UserId!));
     }
 
     [Authorize]
     [HttpPut("profile")]
     public async Task<IActionResult> EditUserProfile([FromBody] UserEditDto userEditDto)
     {
-        var userId = (Guid)HttpContext.Items["UserId"]!;
-        
-        await _userService.EditUserProfile(userEditDto, userId);
+        await _userService.EditUserProfile(userEditDto, (Guid)UserId!);
         return Ok();
     }
 }

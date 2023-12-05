@@ -10,7 +10,9 @@ public class Comment
     [Required]
     public DateTime CreateTime { get; set; }
     
-    public Guid? ParentId { get; set; }
+    public Guid? ParentCommentId { get; set; }
+    public Guid? TopLevelCommentId { get; set; }
+    public Guid PostId { get; set; }
     
     [Required]
     [MinLength(1)] 

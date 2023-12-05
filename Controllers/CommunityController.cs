@@ -1,8 +1,10 @@
+using System.Security.Claims;
 using BlogApi.Dtos;
 using BlogApi.Dtos.ValidationAttributes;
 using BlogApi.Models;
 using BlogApi.Models.Types;
 using BlogApi.Services.CommunityService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BlogApi.Controllers;
@@ -13,6 +15,22 @@ public class CommunityController : ControllerBase
 {
     private readonly ICommunityService _communityService;
 
+    private Guid? UserId
+    {
+        get
+        {
+            var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
+            var claims = identity.Claims;
+            var rawUserId = claims.FirstOrDefault(x => x.Type == "id")?.Value;
+            if (Guid.TryParse(rawUserId, out var userId))
+            {
+                return userId;
+            }
+
+            return null;
+        }
+    }
+    
     public CommunityController(ICommunityService communityService)
     {
         _communityService = communityService;
@@ -28,9 +46,7 @@ public class CommunityController : ControllerBase
     [HttpGet("my")]
     public async Task<ActionResult<List<CommunityUserDto>>> GetUserCommunities()
     {
-        var userId = (Guid)HttpContext.Items["UserId"]!;
-
-        return Ok(await _communityService.GetUserCommunities(userId));
+        return Ok(await _communityService.GetUserCommunities((Guid)UserId!));
     }
 
     [AllowAnonymous]
@@ -43,9 +59,7 @@ public class CommunityController : ControllerBase
         [FromQuery] int size = 5
     )
     {
-        var userId = (Guid?)HttpContext.Items["UserId"];
-
-        return Ok(await _communityService.GetCommunityPosts(userId, id, tags, sorting, page, size));
+        return Ok(await _communityService.GetCommunityPosts((Guid)UserId!, id, tags, sorting, page, size));
     }
 
 
@@ -59,36 +73,28 @@ public class CommunityController : ControllerBase
     [HttpPost("create")]
     public async Task<ActionResult<Guid>> CreateCommunity(CommunityCreateDto communityCreateDto)
     {
-        var userId = (Guid)HttpContext.Items["UserId"]!;
-
-        return Ok(await _communityService.CreateCommunity(communityCreateDto, userId));
+        return Ok(await _communityService.CreateCommunity(communityCreateDto, (Guid)UserId!));
     }
 
     [Authorize]
     [HttpPost("{id}/post")]
     public async Task<ActionResult<Guid>> CreatePost(PostCreateDto postCreateDto, Guid id)
     {
-        var userId = (Guid)HttpContext.Items["UserId"]!;
-
-        return Ok(await _communityService.CreatePost(postCreateDto, userId, id));
+        return Ok(await _communityService.CreatePost(postCreateDto, (Guid)UserId!, id));
     }
 
     [Authorize]
     [HttpGet("{id}/role")]
     public async Task<ActionResult<Guid>> GetUserRoleInCommunity(Guid id)
     {
-        var userId = (Guid)HttpContext.Items["UserId"]!;
-
-        return Ok(await _communityService.GetUserRoleInCommunity(id, userId));
+        return Ok(await _communityService.GetUserRoleInCommunity(id, (Guid)UserId!));
     }
 
     [Authorize]
     [HttpPost("{id}/subscribe")]
     public async Task<IActionResult> SubscribeToCommunity(Guid id)
     {
-        var userId = (Guid)HttpContext.Items["UserId"]!;
-
-        await _communityService.SubscribeToCommunity(id, userId);
+        await _communityService.SubscribeToCommunity(id, (Guid)UserId!);
         return Ok();
     }
 
@@ -96,9 +102,7 @@ public class CommunityController : ControllerBase
     [HttpDelete("{id}/unsubscribe")]
     public async Task<IActionResult> UnsubscribeFromCommunity(Guid id)
     {
-        var userId = (Guid)HttpContext.Items["UserId"]!;
-
-        await _communityService.UnsubscribeFromCommunity(id, userId);
+        await _communityService.UnsubscribeFromCommunity(id, (Guid)UserId!);
         return Ok();
     }
 }
