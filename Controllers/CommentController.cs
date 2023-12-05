@@ -47,4 +47,20 @@ public class CommentController : ControllerBase
     {
         return Ok(await _commentService.GetCommentTree(id));
     }
+    
+    [Authorize]
+    [HttpPut("{id}")]
+    public async Task<IActionResult> EditComment(Guid id, UpdateCommentDto updateCommentDto)
+    {
+        await _commentService.EditComment(id, (Guid)UserId!, updateCommentDto);
+        return Ok();
+    }
+    
+    [Authorize]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteComment(Guid id)
+    {
+        await _commentService.DeleteComment(id, (Guid)UserId!);
+        return Ok();
+    }
 }

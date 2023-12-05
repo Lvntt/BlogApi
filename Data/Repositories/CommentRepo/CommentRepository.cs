@@ -30,6 +30,11 @@ public class CommentRepository : ICommentRepository
             .ToListAsync();
     }
 
+    public void DeleteComment(Comment comment)
+    {
+        _context.Comments.Remove(comment);
+    }
+
     public Task Save()
     {
         return _context.SaveChangesAsync();

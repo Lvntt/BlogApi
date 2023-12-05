@@ -6,4 +6,6 @@ public interface ICommentService
 {
     Task<List<CommentDto>> GetCommentTree(Guid commentId);
     Task AddComment(Guid postId, Guid authorId, CreateCommentDto createCommentDto);
+    Task EditComment(Guid commentId, Guid authorId, UpdateCommentDto updateCommentDto);
+    Task DeleteComment(Guid commentId, Guid authorId);
 }
