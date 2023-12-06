@@ -34,33 +34,33 @@ public class CommentController : ControllerBase
     }
 
     [Authorize]
-    [HttpPost("/api/post/{id}/comment")]
-    public async Task<IActionResult> AddComment(Guid id, CreateCommentDto createCommentDto)
+    [HttpPost("/api/post/{postId}/comment")]
+    public async Task<IActionResult> AddComment(Guid postId, CreateCommentDto createCommentDto)
     {
-        await _commentService.AddComment(id, (Guid)UserId!, createCommentDto);
+        await _commentService.AddComment(postId, (Guid)UserId!, createCommentDto);
         return Ok();
     }
     
     [Authorize]
-    [HttpGet("{id}/tree")]
-    public async Task<ActionResult<List<CommentDto>>> GetCommentTree(Guid id)
+    [HttpGet("{commentId}/tree")]
+    public async Task<ActionResult<List<CommentDto>>> GetCommentTree(Guid commentId)
     {
-        return Ok(await _commentService.GetCommentTree(id));
+        return Ok(await _commentService.GetCommentTree(commentId));
     }
     
     [Authorize]
-    [HttpPut("{id}")]
-    public async Task<IActionResult> EditComment(Guid id, UpdateCommentDto updateCommentDto)
+    [HttpPut("{commentId}")]
+    public async Task<IActionResult> EditComment(Guid commentId, UpdateCommentDto updateCommentDto)
     {
-        await _commentService.EditComment(id, (Guid)UserId!, updateCommentDto);
+        await _commentService.EditComment(commentId, (Guid)UserId!, updateCommentDto);
         return Ok();
     }
     
     [Authorize]
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteComment(Guid id)
+    [HttpDelete("{commentId}")]
+    public async Task<IActionResult> DeleteComment(Guid commentId)
     {
-        await _commentService.DeleteComment(id, (Guid)UserId!);
+        await _commentService.DeleteComment(commentId, (Guid)UserId!);
         return Ok();
     }
 }

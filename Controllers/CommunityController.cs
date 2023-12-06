@@ -1,7 +1,5 @@
 using System.Security.Claims;
 using BlogApi.Dtos;
-using BlogApi.Dtos.ValidationAttributes;
-using BlogApi.Models;
 using BlogApi.Models.Types;
 using BlogApi.Services.CommunityService;
 using Microsoft.AspNetCore.Authorization;
@@ -50,23 +48,23 @@ public class CommunityController : ControllerBase
     }
 
     [AllowAnonymous]
-    [HttpGet("{id}/post")]
+    [HttpGet("{communityId}/post")]
     public async Task<ActionResult<Guid>> GetCommunityPosts(
-        Guid id, 
+        Guid communityId, 
         [FromQuery] List<Guid>? tags,
         [FromQuery] SortingOption? sorting,
         [FromQuery] int page = 1,
         [FromQuery] int size = 5
     )
     {
-        return Ok(await _communityService.GetCommunityPosts((Guid)UserId!, id, tags, sorting, page, size));
+        return Ok(await _communityService.GetCommunityPosts((Guid)UserId!, communityId, tags, sorting, page, size));
     }
 
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<CommunityFullDto>> GetCommunityInfo(Guid id)
+    [HttpGet("{communityId}")]
+    public async Task<ActionResult<CommunityFullDto>> GetCommunityInfo(Guid communityId)
     {
-        return Ok(await _communityService.GetCommunityInfo(id));
+        return Ok(await _communityService.GetCommunityInfo(communityId));
     }
 
     [Authorize]
@@ -77,32 +75,32 @@ public class CommunityController : ControllerBase
     }
 
     [Authorize]
-    [HttpPost("{id}/post")]
-    public async Task<ActionResult<Guid>> CreatePost(PostCreateDto postCreateDto, Guid id)
+    [HttpPost("{communityId}/post")]
+    public async Task<ActionResult<Guid>> CreatePost(PostCreateDto postCreateDto, Guid communityId)
     {
-        return Ok(await _communityService.CreatePost(postCreateDto, (Guid)UserId!, id));
+        return Ok(await _communityService.CreatePost(postCreateDto, (Guid)UserId!, communityId));
     }
 
     [Authorize]
-    [HttpGet("{id}/role")]
-    public async Task<ActionResult<Guid>> GetUserRoleInCommunity(Guid id)
+    [HttpGet("{communityId}/role")]
+    public async Task<ActionResult<Guid>> GetUserRoleInCommunity(Guid communityId)
     {
-        return Ok(await _communityService.GetUserRoleInCommunity(id, (Guid)UserId!));
+        return Ok(await _communityService.GetUserRoleInCommunity(communityId, (Guid)UserId!));
     }
 
     [Authorize]
-    [HttpPost("{id}/subscribe")]
-    public async Task<IActionResult> SubscribeToCommunity(Guid id)
+    [HttpPost("{communityId}/subscribe")]
+    public async Task<IActionResult> SubscribeToCommunity(Guid communityId)
     {
-        await _communityService.SubscribeToCommunity(id, (Guid)UserId!);
+        await _communityService.SubscribeToCommunity(communityId, (Guid)UserId!);
         return Ok();
     }
 
     [Authorize]
-    [HttpDelete("{id}/unsubscribe")]
-    public async Task<IActionResult> UnsubscribeFromCommunity(Guid id)
+    [HttpDelete("{communityId}/unsubscribe")]
+    public async Task<IActionResult> UnsubscribeFromCommunity(Guid communityId)
     {
-        await _communityService.UnsubscribeFromCommunity(id, (Guid)UserId!);
+        await _communityService.UnsubscribeFromCommunity(communityId, (Guid)UserId!);
         return Ok();
     }
 }
