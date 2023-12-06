@@ -36,9 +36,8 @@ public class CommunityService : ICommunityService
 
     public async Task<Guid> CreateCommunity(CommunityCreateDto communityCreateDto, Guid userId)
     {
-        var existingCommunity = await _communityRepository.GetCommunityByName(communityCreateDto.Name)
-                                ?? throw new InvalidActionException(
-                                    $"Community with name {communityCreateDto.Name} already exists.");
+        if (await _communityRepository.GetCommunityByName(communityCreateDto.Name) != null) 
+            throw new InvalidActionException($"Community with name {communityCreateDto.Name} already exists.");
 
         var newCommunity = CommunityMapper.MapToCommunity(communityCreateDto);
 

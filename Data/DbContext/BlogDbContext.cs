@@ -5,7 +5,10 @@ namespace BlogApi.Data.DbContext;
 
 public class BlogDbContext : Microsoft.EntityFrameworkCore.DbContext
 {
-    public BlogDbContext(DbContextOptions<BlogDbContext> options) : base(options) {}
+    public BlogDbContext(DbContextOptions<BlogDbContext> options) : base(options)
+    {
+        Database.EnsureCreated();
+    }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

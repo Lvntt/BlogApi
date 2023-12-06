@@ -24,7 +24,7 @@ public class UserService : IUserService
 
     public async Task<User> Register(UserRegisterDto userRegisterDto)
     {
-        if (await _userRepository.GetUserByEmail(userRegisterDto.Email) == null)
+        if (await _userRepository.GetUserByEmail(userRegisterDto.Email) != null)
             throw new EntityExistsException("User with this email already exists.");
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(userRegisterDto.Password);

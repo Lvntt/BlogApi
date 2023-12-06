@@ -19,8 +19,8 @@ public class TagService : ITagService
 
     public async Task CreateTag(TagCreateDto request)
     {
-        var existingTag = await _tagRepository.GetTagByName(request.Name)
-                          ?? throw new EntityExistsException($"Tag with name {request.Name} already exists.");
+        if (await _tagRepository.GetTagByName(request.Name) != null)
+            throw new EntityExistsException($"Tag with name {request.Name} already exists.");
 
         var tag = new Tag
         {
