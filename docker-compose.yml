@@ -1,0 +1,38 @@
+version: '3.4'
+
+networks:
+  dev:
+    driver: bridge
+
+services:
+  app:
+    image: docker.io/library/blogapi
+    depends_on:
+      - blog_db
+    container_name: blogapi-services
+    ports:
+      - "8088:80"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ConnectionStrings__BlogConnection=Username=postgres;Password=root;Server=database_host;Port=5432;Database=Blog;Pooling=true;
+      - ASPNETCORE_URLS=http://+:80
+    networks:
+      - dev
+        
+  blog_db:
+    image: postgres:alpine
+    container_name: blog_db
+    environment:
+      - POSTGRES_DB=Blog
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=root
+    hostname: database_host
+    expose:
+      - "5432"
+    restart: always
+    volumes:
+      - C:/Users/Lantt/docker-db-lab/var/docker-db-lab:/var/lib/postgresql/data
+    networks:
+      - dev
