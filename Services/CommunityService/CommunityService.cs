@@ -5,6 +5,7 @@ using BlogApi.Data.Repositories.PostRepo;
 using BlogApi.Data.Repositories.TagRepo;
 using BlogApi.Data.Repositories.UserRepo;
 using BlogApi.Dtos;
+using BlogApi.Exceptions;
 using BlogApi.Mappers;
 using BlogApi.Models;
 using BlogApi.Models.Types;
@@ -22,7 +23,8 @@ public class CommunityService : ICommunityService
     private readonly IAuthorRepository _authorRepository;
 
     public CommunityService(ICommunityRepository communityRepository, IUserRepository userRepository,
-        ITagRepository tagRepository, IPostRepository postRepository, IAuthorRepository authorRepository, IMapper mapper)
+        ITagRepository tagRepository, IPostRepository postRepository, IAuthorRepository authorRepository,
+        IMapper mapper)
     {
         _communityRepository = communityRepository;
         _userRepository = userRepository;
@@ -34,11 +36,9 @@ public class CommunityService : ICommunityService
 
     public async Task<Guid> CreateCommunity(CommunityCreateDto communityCreateDto, Guid userId)
     {
-        var existingCommunity = await _communityRepository.GetCommunityByName(communityCreateDto.Name);
-        if (existingCommunity != null)
-        {
-            throw new InvalidOperationException($"Community with name {communityCreateDto.Name} already exists.");
-        }
+        var existingCommunity = await _communityRepository.GetCommunityByName(communityCreateDto.Name)
+                                ?? throw new InvalidActionException(
+                                    $"Community with name {communityCreateDto.Name} already exists.");
 
         var newCommunity = CommunityMapper.MapToCommunity(communityCreateDto);
 
@@ -58,18 +58,16 @@ public class CommunityService : ICommunityService
 
     public async Task<CommunityFullDto> GetCommunityInfo(Guid communityId)
     {
-        var community = await _communityRepository.GetCommunityById(communityId);
-        if (community == null)
-        {
-            throw new KeyNotFoundException($"Community with Guid={communityId} not found.");
-        }
+        var community = await _communityRepository.GetCommunityById(communityId)
+                        ?? throw new EntityNotFoundException($"Community with Guid={communityId} not found.");
 
         var administrators = _communityRepository.GetCommunityAdministrators(community);
         var administratorUserDtos = new List<UserDto>();
-        
+
         foreach (var administrator in administrators)
         {
-            var user = await _userRepository.GetUserById(administrator.UserId) ?? throw new KeyNotFoundException("User not found.");
+            var user = await _userRepository.GetUserById(administrator.UserId) ??
+                       throw new EntityNotFoundException("User not found.");
 
             var userDto = UserMapper.MapToUserDto(user);
 
@@ -108,17 +106,11 @@ public class CommunityService : ICommunityService
 
     public async Task SubscribeToCommunity(Guid communityId, Guid userId)
     {
-        var existingCommunity = await _communityRepository.GetCommunityById(communityId);
-        if (existingCommunity == null)
-        {
-            throw new KeyNotFoundException($"Community with Guid={communityId} not found.");
-        }
+        var existingCommunity = await _communityRepository.GetCommunityById(communityId)
+                                ?? throw new EntityNotFoundException($"Community with Guid={communityId} not found.");
 
-        var existingMember = await _communityRepository.GetCommunityMember(communityId, userId);
-        if (existingMember != null)
-        {
-            throw new InvalidOperationException("User is already a member of this community.");
-        }
+        var existingMember = await _communityRepository.GetCommunityMember(communityId, userId)
+                             ?? throw new InvalidActionException("User is already a member of this community.");
 
         var newSubscriber = new CommunityMember
         {
@@ -129,61 +121,43 @@ public class CommunityService : ICommunityService
 
         await _communityRepository.AddCommunityMember(newSubscriber);
         existingCommunity.SubscribersCount++;
-        
+
         await _communityRepository.Save();
     }
 
     public async Task UnsubscribeFromCommunity(Guid communityId, Guid userId)
     {
-        var existingCommunity = await _communityRepository.GetCommunityById(communityId);
-        if (existingCommunity == null)
-        {
-            throw new KeyNotFoundException($"Community with Guid={communityId} not found.");
-        }
+        var existingCommunity = await _communityRepository.GetCommunityById(communityId)
+                                ?? throw new EntityNotFoundException($"Community with Guid={communityId} not found.");
 
-        var existingSubscriber = await _communityRepository.GetSubscriber(communityId, userId);
-        if (existingSubscriber == null)
-        {
-            throw new InvalidOperationException("User is not a subscriber of this community.");
-        }
+        var existingSubscriber = await _communityRepository.GetSubscriber(communityId, userId)
+                                 ?? throw new InvalidActionException("User is not a subscriber of this community.");
 
         _communityRepository.RemoveCommunityMember(existingSubscriber);
         existingCommunity.SubscribersCount--;
-        
+
         await _communityRepository.Save();
     }
 
     public async Task<Guid> CreatePost(PostCreateDto postCreateDto, Guid authorId, Guid communityId)
     {
-        var user = await _userRepository.GetUserById(authorId);
-        if (user == null)
-        {
-            throw new KeyNotFoundException("User not found.");
-        }
+        var user = await _userRepository.GetUserById(authorId)
+                   ?? throw new EntityNotFoundException("User not found.");
 
-        var community = await _communityRepository.GetCommunityById(communityId);
-        if (community == null)
-        {
-            throw new KeyNotFoundException($"Community with Guid={communityId} not found.");
-        }
+        var community = await _communityRepository.GetCommunityById(communityId)
+                        ?? throw new EntityNotFoundException($"Community with Guid={communityId} not found.");
 
-        var administrator = await _communityRepository.GetAdministrator(community.Id, user.Id);
-        if (administrator == null)
-        {
-            throw new MemberAccessException("Access denied");
-        }
-        
+        var administrator = await _communityRepository.GetAdministrator(community.Id, user.Id)
+                            ?? throw new ForbiddenActionException("Access denied");
+
         var tags = new List<Tag>();
         if (!postCreateDto.Tags.IsNullOrEmpty())
         {
             foreach (var tagGuid in postCreateDto.Tags)
             {
-                var tag = await _tagRepository.GetTagFromGuid(tagGuid);
-                if (tag == null)
-                {
-                    throw new KeyNotFoundException($"Tag with Guid={tagGuid} not found.");
-                }
-                
+                var tag = await _tagRepository.GetTagFromGuid(tagGuid)
+                          ?? throw new EntityNotFoundException($"Tag with Guid={tagGuid} not found.");
+
                 tags.Add(tag);
             }
         }
@@ -223,65 +197,59 @@ public class CommunityService : ICommunityService
         int size
     )
     {
-        var community = await _communityRepository.GetCommunityById(communityId);
-        if (community == null)
-        {
-            throw new KeyNotFoundException($"Community with Guid={communityId} not found.");
-        }
+        var community = await _communityRepository.GetCommunityById(communityId)
+                        ?? throw new EntityNotFoundException($"Community with Guid={communityId} not found.");
 
         if (community.IsClosed && (authorId == null
-                                   || await _communityRepository.GetCommunityMember(communityId, (Guid)authorId) == null))
+                                   || await _communityRepository.GetCommunityMember(communityId, (Guid)authorId) ==
+                                   null))
         {
-            throw new MemberAccessException("This group is closed.");
+            throw new ForbiddenActionException("This group is closed.");
         }
-        
+
         var communityPostsQueryable = _communityRepository.GetCommunityPosts(community);
-        
+
         var postsCount = communityPostsQueryable.Count();
-        var paginationCount = !communityPostsQueryable.IsNullOrEmpty() ? (int)Math.Ceiling((double)postsCount / size) : 0;
-        
+        var paginationCount =
+            !communityPostsQueryable.IsNullOrEmpty() ? (int)Math.Ceiling((double)postsCount / size) : 0;
+
         if (page < 1 || (paginationCount != 0 && page > paginationCount))
         {
-            throw new InvalidOperationException("Invalid value for attribute page.");
+            throw new InvalidActionException("Invalid value for attribute page.");
         }
-        
+
         var pagination = new PageInfoModel
         {
             Size = size,
             Count = paginationCount,
             Current = page
         };
-        
+
         if (!tags.IsNullOrEmpty())
         {
             foreach (var guid in tags)
             {
                 if (await _tagRepository.GetTagFromGuid(guid) == null)
-                {
-                    throw new KeyNotFoundException($"Tag with Guid={guid} not found.");
-                }
+                    throw new EntityNotFoundException($"Tag with Guid={guid} not found.");
             }
-            
+
             communityPostsQueryable = _postRepository.GetPostsByTagsId(communityPostsQueryable, tags);
         }
-        
+
         if (sorting != null)
         {
             communityPostsQueryable = _postRepository.GetSortedPosts(communityPostsQueryable, (SortingOption)sorting);
         }
-        
+
         var posts = _postRepository.GetPagedPosts(communityPostsQueryable, pagination);
 
         User? user = null;
         if (authorId != null)
         {
-            user = await _userRepository.GetUserById((Guid)authorId);
-            if (user == null)
-            {
-                throw new KeyNotFoundException("User not found.");
-            }
+            user = await _userRepository.GetUserById((Guid)authorId)
+                   ?? throw new KeyNotFoundException("User not found.");
         }
-        
+
         var postsDto = posts.Select(post =>
             {
                 var hasLike = false;
@@ -289,7 +257,7 @@ public class CommunityService : ICommunityService
                 {
                     hasLike = _postRepository.DidUserLikePost(post, user);
                 }
-                
+
                 var tagDtos = post.Tags
                     .Select(tag => _mapper.Map<TagDto>(tag))
                     .ToList();
@@ -298,7 +266,7 @@ public class CommunityService : ICommunityService
                 return postDto;
             }
         ).ToList();
-        
+
         return new PostPagedListDto
         {
             Posts = postsDto,

@@ -5,6 +5,7 @@ using BlogApi.Data.Repositories.CommunityRepo;
 using BlogApi.Data.Repositories.PostRepo;
 using BlogApi.Data.Repositories.TagRepo;
 using BlogApi.Dtos;
+using BlogApi.Exceptions;
 using BlogApi.Mappers;
 using BlogApi.Models;
 using BlogApi.Models.Types;
@@ -51,9 +52,7 @@ public class PostService : IPostService
             foreach (var guid in tags)
             {
                 if (await _tagRepository.GetTagFromGuid(guid) == null)
-                {
-                    throw new KeyNotFoundException($"Tag with Guid={guid} not found.");
-                }
+                    throw new EntityNotFoundException($"Tag with Guid={guid} not found.");
             }
 
             postsQueryable = _postRepository.GetPostsByTagsId(postsQueryable, tags);
@@ -89,9 +88,7 @@ public class PostService : IPostService
         var paginationCount = !postsQueryable.IsNullOrEmpty() ? (int)Math.Ceiling((double)postsCount / size) : 0;
 
         if (page < 1 || (paginationCount != 0 && page > paginationCount))
-        {
-            throw new InvalidOperationException("Invalid value for attribute page.");
-        }
+            throw new InvalidActionException("Invalid value for attribute page.");
 
         var pagination = new PageInfoModel
         {
@@ -105,11 +102,8 @@ public class PostService : IPostService
         User? user = null;
         if (userId != null)
         {
-            user = await _userRepository.GetUserById((Guid)userId);
-            if (user == null)
-            {
-                throw new KeyNotFoundException("User not found.");
-            }
+            user = await _userRepository.GetUserById((Guid)userId) 
+                ?? throw new EntityNotFoundException("User not found.");
         }
 
         var postsDto = posts.Select(post =>
@@ -137,22 +131,16 @@ public class PostService : IPostService
 
     public async Task<Guid> CreatePost(PostCreateDto postCreateDto, Guid authorId)
     {
-        var user = await _userRepository.GetUserById(authorId);
-        if (user == null)
-        {
-            throw new KeyNotFoundException("User not found.");
-        }
+        var user = await _userRepository.GetUserById(authorId)
+            ?? throw new EntityNotFoundException("User not found.");
 
         var tags = new List<Tag>();
         if (!postCreateDto.Tags.IsNullOrEmpty())
         {
             foreach (var tagGuid in postCreateDto.Tags)
             {
-                var tag = await _tagRepository.GetTagFromGuid(tagGuid);
-                if (tag == null)
-                {
-                    throw new KeyNotFoundException($"Tag with Guid={tagGuid} not found.");
-                }
+                var tag = await _tagRepository.GetTagFromGuid(tagGuid)
+                    ?? throw new EntityNotFoundException($"Tag with Guid={tagGuid} not found.");
 
                 tags.Add(tag);
             }
@@ -188,18 +176,13 @@ public class PostService : IPostService
     {
         var post = await _postRepository.GetPost(postId);
         if (post == null)
-        {
-            throw new KeyNotFoundException($"Post with Guid={postId} not found.");
-        }
+            throw new EntityNotFoundException($"Post with Guid={postId} not found.");
 
         var hasLike = false;
         if (userId != null)
         {
-            var user = await _userRepository.GetUserById((Guid)userId);
-            if (user == null)
-            {
-                throw new KeyNotFoundException("User not found.");
-            }
+            var user = await _userRepository.GetUserById((Guid)userId)
+                       ?? throw new EntityNotFoundException("User not found.");
 
             hasLike = _postRepository.DidUserLikePost(post, user);
         }
@@ -219,69 +202,47 @@ public class PostService : IPostService
 
     public async Task AddLikeToPost(Guid postId, Guid userId)
     {
-        var post = await _postRepository.GetPost(postId);
-        if (post == null)
-        {
-            throw new KeyNotFoundException($"Post with Guid={postId} not found.");
-        }
+        var post = await _postRepository.GetPost(postId)
+                   ?? throw new EntityNotFoundException($"Post with Guid={postId} not found.");
 
-        var user = await _userRepository.GetUserById(userId);
-        if (user == null)
-        {
-            throw new KeyNotFoundException("User not found.");
-        }
-        
-        var author = await _authorRepository.GetAuthorById(post.AuthorId);
-        if (author == null)
-        {
-            throw new KeyNotFoundException("Author not found.");
-        }
+
+        var user = await _userRepository.GetUserById(userId)
+                   ?? throw new EntityNotFoundException("User not found.");
+
+        var author = await _authorRepository.GetAuthorById(post.AuthorId)
+                     ?? throw new EntityNotFoundException("Author not found.");
 
         if (_postRepository.DidUserLikePost(post, user))
-        {
-            throw new InvalidOperationException("User has already liked this post.");
-        }
+            throw new InvalidActionException("User has already liked this post.");
 
         post.LikedPosts.Add(
             new Like { PostId = post.Id, UserId = user.Id }
         );
         post.Likes++;
         author.Likes++;
-        
+
         await _postRepository.Save();
         await _authorRepository.Save();
     }
 
     public async Task RemoveLikeFromPost(Guid postId, Guid userId)
     {
-        var post = await _postRepository.GetPost(postId);
-        if (post == null)
-        {
-            throw new KeyNotFoundException($"Post with Guid={postId} not found.");
-        }
+        var post = await _postRepository.GetPost(postId)
+                   ?? throw new EntityNotFoundException($"Post with Guid={postId} not found.");
 
-        var user = await _userRepository.GetUserById(userId);
-        if (user == null)
-        {
-            throw new KeyNotFoundException("User not found.");
-        }
+        var user = await _userRepository.GetUserById(userId)
+                   ?? throw new EntityNotFoundException("User not found.");
 
-        var existingLike = await _postRepository.GetExistingLike(post, user);
-        if (existingLike == null)
-        {
-            throw new InvalidOperationException("User has not liked this post.");
-        }
-        
-        var author = await _authorRepository.GetAuthorById(post.AuthorId);
-        if (author == null)
-        {
-            throw new KeyNotFoundException("Author not found.");
-        }
+        var existingLike = await _postRepository.GetExistingLike(post, user)
+                           ?? throw new InvalidActionException("User has not liked this post.");
+
+        var author = await _authorRepository.GetAuthorById(post.AuthorId)
+                     ?? throw new EntityNotFoundException("Author not found.");
 
         post.LikedPosts.Remove(existingLike);
         post.Likes--;
         author.Likes--;
-        
+
         await _postRepository.Save();
         await _authorRepository.Save();
     }

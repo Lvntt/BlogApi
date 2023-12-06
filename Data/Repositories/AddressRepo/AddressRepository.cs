@@ -1,5 +1,6 @@
 using BlogApi.Data.DbContext;
 using BlogApi.Dtos;
+using BlogApi.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlogApi.Data.Repositories.AddressRepo;
@@ -88,7 +89,7 @@ public class AddressRepository : IAddressRepository
                     select new string(asAdmHierarchy.Path)
                 )
                 .FirstOrDefaultAsync() ??
-            throw new KeyNotFoundException($"Could not find address object with ObjectGuid={objectGuid}.");
+            throw new EntityNotFoundException($"Could not find address object with ObjectGuid={objectGuid}.");
 
         var parentObjectIds = addressPath
             .Split(".")

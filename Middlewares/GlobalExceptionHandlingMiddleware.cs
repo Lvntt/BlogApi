@@ -1,12 +1,18 @@
 using System.Net;
-using System.Security.Authentication;
 using System.Text.Json;
+using BlogApi.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BlogApi.Middlewares;
 
 public class GlobalExceptionHandlingMiddleware : IMiddleware
 {
+    private class ExceptionDetails
+    {
+        public int StatusCode { get; init; }
+        public string Detail { get; init; } = string.Empty;
+    }
+    
     private readonly ILogger<GlobalExceptionHandlingMiddleware> _logger;
 
     public GlobalExceptionHandlingMiddleware(ILogger<GlobalExceptionHandlingMiddleware> logger)
@@ -20,78 +26,63 @@ public class GlobalExceptionHandlingMiddleware : IMiddleware
         {
             await next(context);
         }
-        catch (InvalidOperationException ioe)
+        catch (Exception ex)
         {
-            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-            var problem = new ProblemDetails
-            {
-                Status = (int)HttpStatusCode.BadRequest,
-                Type = "Error",
-                Detail = ioe.Message
-            };
-
-            var jsonProblem = JsonSerializer.Serialize(problem);
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync(jsonProblem);
-        }
-        catch (AuthenticationException ae)
-        {
-            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-            var problem = new ProblemDetails
-            {
-                Status = (int)HttpStatusCode.BadRequest,
-                Type = "Error",
-                Detail = ae.Message
-            };
-
-            var jsonProblem = JsonSerializer.Serialize(problem);
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync(jsonProblem);
-        }
-        catch (KeyNotFoundException nfe)
-        {
-            context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-            var problem = new ProblemDetails
-            {
-                Status = (int)HttpStatusCode.NotFound,
-                Type = "Error",
-                Detail = nfe.Message
-            };
-
-            var jsonProblem = JsonSerializer.Serialize(problem);
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync(jsonProblem);
-        }
-        catch (MemberAccessException mae)
-        {
-            context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-            var problem = new ProblemDetails
-            {
-                Status = (int)HttpStatusCode.Forbidden,
-                Type = "Error",
-                Detail = mae.Message
-            };
-
-            var jsonProblem = JsonSerializer.Serialize(problem);
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync(jsonProblem);
-        } 
-        catch (Exception e)
-        {
-            _logger.LogError(e, $"An unexpected error occured. StackTrace: \n \t\t {e.StackTrace}");
+            var exceptionDescription = GetExceptionDetails(ex);
             
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-            
+            context.Response.StatusCode = exceptionDescription.StatusCode;
             var problem = new ProblemDetails
             {
-                Status = (int)HttpStatusCode.InternalServerError,
-                Type = "Internal server error",
-                Detail = "An internal server error has occurred."
+                Status = exceptionDescription.StatusCode,
+                Type = "Error",
+                Detail = exceptionDescription.Detail
             };
             
             var jsonProblem = JsonSerializer.Serialize(problem);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(jsonProblem);
+
         }
+    }
+
+    private ExceptionDetails GetExceptionDetails(Exception ex)
+    {
+        int statusCode;
+        string detail;
+
+        switch (ex)
+        {
+            case EntityNotFoundException notFoundEx:
+                statusCode = (int)HttpStatusCode.NotFound;
+                detail = notFoundEx.Message;
+                break;
+            case EntityExistsException entityExistsEx:
+                statusCode = (int)HttpStatusCode.BadRequest;
+                detail = entityExistsEx.Message;
+                break;
+            case InvalidActionException invalidActionEx:
+                statusCode = (int)HttpStatusCode.BadRequest;
+                detail = invalidActionEx.Message;
+                break;
+            case InvalidCredentialsException invalidCredentialsEx:
+                statusCode = (int)HttpStatusCode.BadRequest;
+                detail = invalidCredentialsEx.Message;
+                break;
+            case ForbiddenActionException forbiddenActionEx:
+                statusCode = (int)HttpStatusCode.Forbidden;
+                detail = forbiddenActionEx.Message;
+                break;
+            default:
+                _logger.LogError(ex, $"An unexpected error occurred. StackTrace: \n \t\t {ex.StackTrace}");
+                statusCode = (int)HttpStatusCode.InternalServerError;
+                detail = "An internal server error has occurred.";
+                break;
+        }
+
+        return new ExceptionDetails
+        {
+            StatusCode = statusCode,
+            Detail = detail
+        };
     }
 }

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using BlogApi.Data.Repositories.TagRepo;
 using BlogApi.Dtos;
+using BlogApi.Exceptions;
 using BlogApi.Models;
 
 namespace BlogApi.Services.TagService;
@@ -18,11 +19,8 @@ public class TagService : ITagService
 
     public async Task CreateTag(TagCreateDto request)
     {
-        var existingTag = await _tagRepository.GetTagByName(request.Name);
-        if (existingTag != null)
-        {
-            throw new InvalidOperationException($"Tag with name {request.Name} already exists.");
-        }
+        var existingTag = await _tagRepository.GetTagByName(request.Name)
+                          ?? throw new EntityExistsException($"Tag with name {request.Name} already exists.");
 
         var tag = new Tag
         {
