@@ -49,6 +49,7 @@ builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
 builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<ICommunityRepository, CommunityRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
@@ -57,6 +58,7 @@ builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<ICommunityService, CommunityService>();
 builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
+
 builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
 
 builder.Services.AddAutoMapper(typeof(AutoMappingProfile));

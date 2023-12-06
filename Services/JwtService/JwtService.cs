@@ -25,7 +25,7 @@ public class JwtService : IJwtService
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             NotBefore = DateTime.UtcNow,
-            Expires = DateTime.UtcNow.AddMinutes(30),
+            Expires = DateTime.UtcNow.Add(TimeSpan.FromMinutes(Convert.ToDouble(_configuration["Authentication:ExpirationTimeMinutes"]))),
             SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
             Issuer = _configuration.GetSection("Authentication:Issuer").Value,
             Subject = new ClaimsIdentity(new Claim[]
