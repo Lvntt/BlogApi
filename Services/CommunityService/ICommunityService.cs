@@ -16,7 +16,7 @@ public interface ICommunityService
     Task<Guid> CreatePost(PostCreateDto postCreateDto, Guid authorId, Guid communityId);
 
     Task<PostPagedListDto> GetCommunityPosts(
-        Guid? authorId,
+        Guid? userId,
         Guid communityId,
         List<Guid>? tags,
         SortingOption? sorting,

@@ -36,9 +36,9 @@ public class TagService : ITagService
 
     public async Task<List<TagDto>> GetTags()
     {
-        // TODO to one query (single select)
-        var tags = await _context.Tags.ToListAsync();
-        var tagDtos = tags.Select(tag => _mapper.Map<TagDto>(tag)).ToList();
+        var tagDtos = await _context.Tags
+            .Select(tag => _mapper.Map<TagDto>(tag))
+            .ToListAsync();
 
         return tagDtos;
     }

@@ -3,6 +3,7 @@ using BlogApi.Data.DbContext;
 using BlogApi.Dtos;
 using BlogApi.Models;
 using BlogApi.Exceptions;
+using BlogApi.Extensions;
 using BlogApi.Mappers;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,8 +22,7 @@ public class UserService : IUserService
 
     public async Task<User> Register(UserRegisterDto userRegisterDto)
     {
-        if (await _context.Users.FirstOrDefaultAsync(user => user.Email == userRegisterDto.Email) != null)
-            throw new EntityExistsException("User with this email already exists.");
+        await _context.GetUserByEmail(userRegisterDto.Email);
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(userRegisterDto.Password);
 
@@ -35,8 +35,7 @@ public class UserService : IUserService
 
     public async Task<User> Login(LoginCredentialsDto loginCredentialsDto)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(user => user.Email == loginCredentialsDto.Email)
-                   ?? throw new EntityNotFoundException("User not found.");
+        var user = await _context.GetUserByEmail(loginCredentialsDto.Email);
 
         if (!BCrypt.Net.BCrypt.Verify(loginCredentialsDto.Password, user.PasswordHash))
             throw new InvalidCredentialsException("Invalid email or password.");
@@ -52,16 +51,13 @@ public class UserService : IUserService
 
     public async Task<UserDto> GetUserProfile(Guid id)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(user => user.Id == id)
-                   ?? throw new EntityNotFoundException("User not found.");
-
+        var user = await _context.GetUserById(id);
         return _mapper.Map<UserDto>(user);
     }
 
     public async Task EditUserProfile(UserEditDto userEditDto, Guid id)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(user => user.Id == id)
-                   ?? throw new EntityNotFoundException("User not found.");
+        var user = await _context.GetUserById(id);
 
         user.FullName = userEditDto.FullName;
         user.Email = userEditDto.Email;

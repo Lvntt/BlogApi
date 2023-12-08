@@ -57,7 +57,7 @@ public class CommunityController : ControllerBase
         [FromQuery] int size = 5
     )
     {
-        return Ok(await _communityService.GetCommunityPosts((Guid)UserId!, communityId, tags, sorting, page, size));
+        return Ok(await _communityService.GetCommunityPosts(UserId, communityId, tags, sorting, page, size));
     }
 
 

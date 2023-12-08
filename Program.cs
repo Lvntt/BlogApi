@@ -1,16 +1,7 @@
 using System.Text;
 using BlogApi.Data.DbContext;
-using BlogApi.Data.Repositories.AddressRepo;
-using BlogApi.Data.Repositories.UserRepo;
-using BlogApi.Data.Repositories.AuthorRepo;
-using BlogApi.Data.Repositories.CommentRepo;
-using BlogApi.Data.Repositories.CommunityRepo;
-using BlogApi.Data.Repositories.PostRepo;
-using BlogApi.Data.Repositories.TagRepo;
-using BlogApi.Data.Repositories.TokenBlacklistRepo;
 using BlogApi.Mappers;
 using BlogApi.Middlewares;
-using BlogApi.Models;
 using BlogApi.Services.AddressService;
 using BlogApi.Services.AuthorService;
 using BlogApi.Services.CommentService;
@@ -40,15 +31,6 @@ builder.Services.AddDbContext<GarDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("GarConnection"));
 });
-
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<ITokenBlacklistRepository, TokenBlacklistRepository>();
-builder.Services.AddScoped<IAddressRepository, AddressRepository>();
-builder.Services.AddScoped<ITagRepository, TagRepository>();
-builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
-builder.Services.AddScoped<IPostRepository, PostRepository>();
-builder.Services.AddScoped<ICommunityRepository, CommunityRepository>();
-builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -92,13 +74,12 @@ builder.Services.AddAuthentication(options =>
         OnTokenValidated = async context =>
         {
             var jwtService = context.HttpContext.RequestServices.GetRequiredService<IJwtService>();
-            var tokenBlacklistRepository =
-                context.HttpContext.RequestServices.GetRequiredService<ITokenBlacklistRepository>();
+            var blogDbContext =
+                context.HttpContext.RequestServices.GetRequiredService<BlogDbContext>();
             var token = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             var userId = jwtService.ValidateToken(token);
-            // TODO extension GetTokenFromBlacklist(new TokenModel { Token = token }) != null;
             var isTokenInBlacklist =
-                await tokenBlacklistRepository.GetTokenFromBlacklist(new TokenModel { Token = token }) != null;
+                await blogDbContext.InvalidTokens.FirstOrDefaultAsync(t => t.Token == token) != null;
             if (userId == null || isTokenInBlacklist)
             {
                 context.Fail("Unauthorized");

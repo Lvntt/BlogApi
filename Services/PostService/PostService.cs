@@ -2,6 +2,7 @@ using AutoMapper;
 using BlogApi.Data.DbContext;
 using BlogApi.Dtos;
 using BlogApi.Exceptions;
+using BlogApi.Extensions;
 using BlogApi.Mappers;
 using BlogApi.Models;
 using BlogApi.Models.Types;
@@ -21,7 +22,7 @@ public class PostService : IPostService
         _context = context;
     }
 
-    public async Task<PostPagedListDto> GetAllAvailablePosts(
+    public Task<PostPagedListDto> GetAllAvailablePosts(
         Guid? userId,
         List<Guid>? tags,
         string? author,
@@ -33,129 +34,20 @@ public class PostService : IPostService
         int size
     )
     {
-        var postsQueryable = _context.Posts
-            .Include(post => post.Tags)
-            .Include(post => post.LikedPosts)
-            .AsQueryable();
-
-        if (!tags.IsNullOrEmpty())
-        {
-            foreach (var guid in tags)
-            {
-                if (await _context.Tags.FirstOrDefaultAsync(tag => tag.Id == guid) == null)
-                    throw new EntityNotFoundException($"Tag with Guid={guid} not found.");
-            }
-
-            // TODO optimize
-            postsQueryable = postsQueryable
-                .ToList()
-                .Where(post => post.Tags
-                    .Select(tag => tag.Id)
-                    .Intersect(tags).Count() == tags.Count)
-                .AsQueryable();
-        }
-
-        if (author != null)
-        {
-            postsQueryable = postsQueryable.Where(post => post.Author.Contains(author));
-        }
-
-        if (min != null)
-        {
-            postsQueryable = postsQueryable.Where(post => post.ReadingTime >= (int)min);
-        }
-
-        if (max != null)
-        {
-            postsQueryable = postsQueryable.Where(post => post.ReadingTime <= (int)max);
-        }
-
-        if (sorting != null)
-        {
-            postsQueryable = (SortingOption)sorting switch
-            {
-                SortingOption.CreateAsc => postsQueryable.OrderBy(post => post.CreateTime),
-                SortingOption.CreateDesc => postsQueryable.OrderByDescending(post => post.CreateTime),
-                SortingOption.LikeAsc => postsQueryable.OrderBy(post => post.Likes),
-                SortingOption.LikeDesc => postsQueryable.OrderByDescending(post => post.Likes),
-                _ => throw new ArgumentOutOfRangeException(nameof(sorting), sorting, null)
-            };
-        }
-
-        if (onlyMyCommunities && userId != null)
-        {
-            var communityMembers = await _context.CommunityMembers
-                .Where(cm => cm.UserId == userId)
-                .ToListAsync();
-            
-            var communityIds = communityMembers
-                .Where(cm => cm.UserId == userId)
-                .Select(cm => cm.CommunityId)
-                .ToList();
-        
-            postsQueryable = postsQueryable.Where(post => post.CommunityId != null && communityIds.Contains((Guid)post.CommunityId));
-        }
-
-        var postsCount = postsQueryable.Count();
-        var paginationCount = !postsQueryable.IsNullOrEmpty() ? (int)Math.Ceiling((double)postsCount / size) : 0;
-
-        if (page < 1 || (paginationCount != 0 && page > paginationCount))
-            throw new InvalidActionException("Invalid value for attribute page.");
-
-        var pagination = new PageInfoModel
-        {
-            Size = size,
-            Count = paginationCount,
-            Current = page
-        };
-
-        var posts = postsQueryable
-            .Skip((pagination.Current - 1) * pagination.Size)
-            .Take(pagination.Size)
-            .ToList();
-
-        User? user = null;
-        if (userId != null)
-        {
-            user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId)
-                ?? throw new EntityNotFoundException("User not found.");
-        }
-
-        var postsDto = posts.Select(post =>
-            {
-                var hasLike = false;
-                if (user != null)
-                {
-                    hasLike = post.LikedPosts.Any(liked => liked.UserId == user.Id);
-                }
-
-                var tagDtos = post.Tags
-                    .Select(tag => _mapper.Map<TagDto>(tag))
-                    .ToList();
-
-                return PostMapper.MapToPostDto(post, hasLike, tagDtos);
-            }
-        ).ToList();
-
-        return new PostPagedListDto
-        {
-            Posts = postsDto,
-            Pagination = pagination
-        };
+        return _context.GetAllAvailablePosts(_mapper, userId, null, tags, author, min, max, sorting, onlyMyCommunities,
+            page, size);
     }
 
     public async Task<Guid> CreatePost(PostCreateDto postCreateDto, Guid authorId)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == authorId)
-            ?? throw new EntityNotFoundException("User not found.");
+        var user = await _context.GetUserById(authorId);
 
         var tags = new List<Tag>();
         if (!postCreateDto.Tags.IsNullOrEmpty())
         {
             foreach (var tagGuid in postCreateDto.Tags)
             {
-                var tag = await _context.Tags.FirstOrDefaultAsync(tag => tag.Id == tagGuid)
-                    ?? throw new EntityNotFoundException($"Tag with Guid={tagGuid} not found.");
+                var tag = await _context.GetTagById(tagGuid);
 
                 tags.Add(tag);
             }
@@ -164,7 +56,7 @@ public class PostService : IPostService
         var newPost = PostMapper.MapToPost(postCreateDto, user, tags);
 
         await _context.Posts.AddAsync(newPost);
-        var existingAuthor = await _context.Authors.FirstOrDefaultAsync(author => author.UserId == authorId);
+        var existingAuthor = await _context.GetAuthorById(authorId);
 
         if (existingAuthor == null)
         {
@@ -182,25 +74,18 @@ public class PostService : IPostService
         }
 
         await _context.SaveChangesAsync();
-        
+
         return newPost.Id;
     }
 
     public async Task<PostFullDto> GetPostInfo(Guid postId, Guid? userId)
     {
-        var post = await _context.Posts
-            .Include(post => post.Tags)
-            .Include(post => post.Comments)
-            .Include(post => post.LikedPosts)
-            .FirstOrDefaultAsync(post => post.Id == postId);
-        if (post == null)
-            throw new EntityNotFoundException($"Post with Guid={postId} not found.");
+        var post = await _context.GetPostById(postId);
 
         var hasLike = false;
         if (userId != null)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(user => user.Id == userId)
-                       ?? throw new EntityNotFoundException("User not found.");
+            var user = await _context.GetUserById((Guid)userId);
 
             hasLike = post.LikedPosts.Any(liked => liked.UserId == user.Id);
         }
@@ -220,18 +105,10 @@ public class PostService : IPostService
 
     public async Task AddLikeToPost(Guid postId, Guid userId)
     {
-        var post = await _context.Posts
-                .Include(post => post.Tags)
-                .Include(post => post.Comments)
-                .Include(post => post.LikedPosts)
-                .FirstOrDefaultAsync(post => post.Id == postId)
-                   ?? throw new EntityNotFoundException($"Post with Guid={postId} not found.");
+        var post = await _context.GetPostById(postId);
+        var user = await _context.GetUserById(userId);
 
-
-        var user = await _context.Users.FirstOrDefaultAsync(user => user.Id == userId)
-                   ?? throw new EntityNotFoundException("User not found.");
-
-        var author = await _context.Authors.FirstOrDefaultAsync(author => author.UserId == post.AuthorId)
+        var author = await _context.GetAuthorById(post.AuthorId)
                      ?? throw new EntityNotFoundException("Author not found.");
 
         if (post.LikedPosts.Any(liked => liked.UserId == user.Id))
@@ -248,23 +125,16 @@ public class PostService : IPostService
 
     public async Task RemoveLikeFromPost(Guid postId, Guid userId)
     {
-        var post = await _context.Posts
-                .Include(post => post.Tags)
-                .Include(post => post.Comments)
-                .Include(post => post.LikedPosts)
-                .FirstOrDefaultAsync(post => post.Id == postId)
-                   ?? throw new EntityNotFoundException($"Post with Guid={postId} not found.");
-
-        var user = await _context.Users.FirstOrDefaultAsync(user => user.Id == userId)
-                   ?? throw new EntityNotFoundException("User not found.");
+        var post = await _context.GetPostById(postId);
+        var user = await _context.GetUserById(userId);
 
         var existingLike = await _context.Likes
-                .FirstOrDefaultAsync(like => 
-                    like.PostId == post.Id 
-                    && like.UserId == user.Id)
+                               .FirstOrDefaultAsync(like =>
+                                   like.PostId == post.Id
+                                   && like.UserId == user.Id)
                            ?? throw new InvalidActionException("User has not liked this post.");
 
-        var author = await _context.Authors.FirstOrDefaultAsync(author => author.UserId == post.AuthorId)
+        var author = await _context.GetAuthorById(post.AuthorId)
                      ?? throw new EntityNotFoundException("Author not found.");
 
         post.LikedPosts.Remove(existingLike);

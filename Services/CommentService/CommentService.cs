@@ -2,6 +2,7 @@ using AutoMapper;
 using BlogApi.Data.DbContext;
 using BlogApi.Dtos;
 using BlogApi.Exceptions;
+using BlogApi.Extensions;
 using BlogApi.Mappers;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,15 +38,9 @@ public class CommentService : ICommentService
 
     public async Task AddComment(Guid postId, Guid authorId, CreateCommentDto createCommentDto)
     {
-        var post = await _context.Posts
-                .Include(post => post.Tags)
-                .Include(post => post.Comments)
-                .Include(post => post.LikedPosts)
-                .FirstOrDefaultAsync(post => post.Id == postId)
-                   ?? throw new EntityNotFoundException($"Post with Guid={postId} not found.");
+        var post = await _context.GetPostById(postId);
 
-        var author = await _context.Users.FirstOrDefaultAsync(user => user.Id == authorId)
-                     ?? throw new EntityNotFoundException("User not found.");
+        var author = await _context.GetUserById(authorId);
 
         Guid? topLevelCommentId = null;
 
@@ -68,25 +63,16 @@ public class CommentService : ICommentService
 
     public async Task EditComment(Guid commentId, Guid authorId, UpdateCommentDto updateCommentDto)
     {
-        var author = await _context.Users.FirstOrDefaultAsync(user => user.Id == authorId)
-                     ?? throw new EntityNotFoundException("User not found.");
+        var author = await _context.GetUserById(authorId);
 
         var comment = await _context.Comments.FirstOrDefaultAsync(comment => comment.Id == commentId)
                       ?? throw new EntityNotFoundException($"Comment with Guid={commentId} not found.");
 
-        var post = await _context.Posts
-                .Include(post => post.Tags)
-                .Include(post => post.Comments)
-                .Include(post => post.LikedPosts)
-                .FirstOrDefaultAsync(post => post.Id == comment.PostId)
-                   ?? throw new EntityNotFoundException($"Post with Guid={comment.PostId} not found.");
+        var post = await _context.GetPostById(comment.PostId);
 
         if (post.CommunityId != null)
         {
-            var community = await _context.Communities
-                    .Include(community => community.Members)
-                    .FirstOrDefaultAsync(community => community.Id == post.CommunityId)
-                            ?? throw new EntityNotFoundException($"Community with Guid={post.CommunityId} not found.");
+            var community = await _context.GetCommunityById((Guid)post.CommunityId);
 
             if (community.IsClosed && await _context.CommunityMembers.FirstOrDefaultAsync(cm =>
                     cm.CommunityId == community.Id 
@@ -105,25 +91,16 @@ public class CommentService : ICommentService
 
     public async Task DeleteComment(Guid commentId, Guid authorId)
     {
-        var author = await _context.Users.FirstOrDefaultAsync(user => user.Id == authorId)
-                     ?? throw new EntityNotFoundException("User not found.");
+        var author = await _context.GetUserById(authorId);
 
         var comment = await _context.Comments.FirstOrDefaultAsync(comment => comment.Id == commentId)
                       ?? throw new EntityNotFoundException($"Comment with Guid={commentId} not found.");
 
-        var post = await _context.Posts
-                .Include(post => post.Tags)
-                .Include(post => post.Comments)
-                .Include(post => post.LikedPosts)
-                .FirstOrDefaultAsync(post => post.Id == comment.PostId)
-                   ?? throw new EntityNotFoundException($"Post with Guid={comment.PostId} not found.");
+        var post = await _context.GetPostById(comment.PostId);
 
         if (post.CommunityId != null)
         {
-            var community = await _context.Communities
-                    .Include(community => community.Members)
-                    .FirstOrDefaultAsync(community => community.Id == post.CommunityId)
-                            ?? throw new EntityNotFoundException($"Community with Guid={post.CommunityId} not found.");
+            var community = await _context.GetCommunityById((Guid)post.CommunityId);
 
             if (community.IsClosed && await _context.CommunityMembers.FirstOrDefaultAsync(cm =>
                     cm.CommunityId == community.Id 
@@ -157,6 +134,7 @@ public class CommentService : ICommentService
             comment.DeleteDate = DateTime.UtcNow;
         }
 
+        post.CommentsCount--;
         await _context.SaveChangesAsync();
     }
 }

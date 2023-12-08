@@ -48,7 +48,7 @@ public class PostController : ControllerBase
     )
     {
         return Ok(
-            await _postService.GetAllAvailablePosts((Guid)UserId!, tags, author, min, max, sorting, onlyMyCommunities, page, size)
+            await _postService.GetAllAvailablePosts(UserId, tags, author, min, max, sorting, onlyMyCommunities, page, size)
         );
     }
 
@@ -63,7 +63,7 @@ public class PostController : ControllerBase
     [HttpGet("{postId}")]
     public async Task<ActionResult<PostFullDto>> GetPostInfo(Guid postId)
     {
-        return Ok(await _postService.GetPostInfo(postId, (Guid)UserId!));
+        return Ok(await _postService.GetPostInfo(postId, UserId));
     }
 
     [Authorize]

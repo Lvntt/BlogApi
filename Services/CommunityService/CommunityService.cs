@@ -2,6 +2,7 @@ using AutoMapper;
 using BlogApi.Data.DbContext;
 using BlogApi.Dtos;
 using BlogApi.Exceptions;
+using BlogApi.Extensions;
 using BlogApi.Mappers;
 using BlogApi.Models;
 using BlogApi.Models.Types;
@@ -23,7 +24,8 @@ public class CommunityService : ICommunityService
 
     public async Task<Guid> CreateCommunity(CommunityCreateDto communityCreateDto, Guid userId)
     {
-        if (await _context.Communities.FirstOrDefaultAsync(community => community.Name == communityCreateDto.Name) != null) 
+        if (await _context.Communities.FirstOrDefaultAsync(community => community.Name == communityCreateDto.Name) !=
+            null)
             throw new InvalidActionException($"Community with name {communityCreateDto.Name} already exists.");
 
         var newCommunity = CommunityMapper.MapToCommunity(communityCreateDto);
@@ -44,20 +46,16 @@ public class CommunityService : ICommunityService
 
     public async Task<CommunityFullDto> GetCommunityInfo(Guid communityId)
     {
-        var community = await _context.Communities
-                .Include(community => community.Members)
-                .FirstOrDefaultAsync(community => community.Id == communityId)
-                        ?? throw new EntityNotFoundException($"Community with Guid={communityId} not found.");
+        var community = await _context.GetCommunityById(communityId);
 
         var administrators = community.Members
             .Where(member => member.Role == CommunityRole.Administrator)
-            .ToList();;
+            .ToList();
         var administratorUserDtos = new List<UserDto>();
 
         foreach (var administrator in administrators)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(user => user.Id == administrator.UserId)
-                       ?? throw new EntityNotFoundException("User not found.");
+            var user = await _context.GetUserById(administrator.UserId);
 
             var userDto = UserMapper.MapToUserDto(user);
 
@@ -71,22 +69,19 @@ public class CommunityService : ICommunityService
 
     public async Task<List<CommunityUserDto>> GetUserCommunities(Guid userId)
     {
-        var communities = await _context.CommunityMembers
+        var communityUserDtos = await _context.CommunityMembers
             .Where(cm => cm.UserId == userId)
-            .ToListAsync();;
-        var communityUserDtos = communities
             .Select(community => _mapper.Map<CommunityUserDto>(community))
-            .ToList();
+            .ToListAsync();
 
         return communityUserDtos;
     }
 
     public async Task<List<CommunityDto>> GetAllCommunities()
     {
-        var communities = await _context.Communities.ToListAsync();
-        var communityDtos = communities
+        var communityDtos = await _context.Communities
             .Select(community => _mapper.Map<CommunityDto>(community))
-            .ToList();
+            .ToListAsync();
 
         return communityDtos;
     }
@@ -94,24 +89,22 @@ public class CommunityService : ICommunityService
     public async Task<CommunityRole?> GetUserRoleInCommunity(Guid communityId, Guid userId)
     {
         var user = await _context.CommunityMembers
-            .Where(cm => 
-                cm.CommunityId == communityId 
+            .Where(cm =>
+                cm.CommunityId == communityId
                 && cm.UserId == userId)
             .FirstOrDefaultAsync();
+        
         return user?.Role;
     }
 
     public async Task SubscribeToCommunity(Guid communityId, Guid userId)
     {
-        var existingCommunity = await _context.Communities
-                .Include(community => community.Members)
-                .FirstOrDefaultAsync(community => community.Id == communityId)
-                                ?? throw new EntityNotFoundException($"Community with Guid={communityId} not found.");
+        var existingCommunity = await _context.GetCommunityById(communityId);
 
-        var existingMember = await _context.CommunityMembers.FirstOrDefaultAsync(cm =>
-                cm.CommunityId == communityId 
-                && cm.UserId == userId)
-                             ?? throw new InvalidActionException("User is already a member of this community.");
+        if (await _context.CommunityMembers.FirstOrDefaultAsync(cm =>
+                cm.CommunityId == communityId
+                && cm.UserId == userId) == null)
+            throw new InvalidActionException("User is already a member of this community.");
 
         var newSubscriber = new CommunityMember
         {
@@ -122,21 +115,18 @@ public class CommunityService : ICommunityService
 
         await _context.CommunityMembers.AddAsync(newSubscriber);
         existingCommunity.SubscribersCount++;
-        
+
         await _context.SaveChangesAsync();
     }
 
     public async Task UnsubscribeFromCommunity(Guid communityId, Guid userId)
     {
-        var existingCommunity = await _context.Communities
-                .Include(community => community.Members)
-                .FirstOrDefaultAsync(community => community.Id == communityId)
-                                ?? throw new EntityNotFoundException($"Community with Guid={communityId} not found.");
+        var existingCommunity = await _context.GetCommunityById(communityId);
 
         var existingSubscriber = await _context.CommunityMembers.FirstOrDefaultAsync(cm =>
-                cm.CommunityId == communityId 
-                && cm.UserId == userId 
-                && cm.Role == CommunityRole.Subscriber)
+                                     cm.CommunityId == communityId
+                                     && cm.UserId == userId
+                                     && cm.Role == CommunityRole.Subscriber)
                                  ?? throw new InvalidActionException("User is not a subscriber of this community.");
 
         _context.CommunityMembers.Remove(existingSubscriber);
@@ -147,27 +137,22 @@ public class CommunityService : ICommunityService
 
     public async Task<Guid> CreatePost(PostCreateDto postCreateDto, Guid authorId, Guid communityId)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(user => user.Id == authorId)
-                   ?? throw new EntityNotFoundException("User not found.");
+        var user = await _context.GetUserById(authorId);
 
-        var community = await _context.Communities
-                .Include(community => community.Members)
-                .FirstOrDefaultAsync(community => community.Id == communityId)
-                        ?? throw new EntityNotFoundException($"Community with Guid={communityId} not found.");
+        var community = await _context.GetCommunityById(communityId);
 
-        var administrator = await _context.CommunityMembers.FirstOrDefaultAsync(cm =>
-                cm.CommunityId == community.Id 
-                && cm.UserId == user.Id 
-                && cm.Role == CommunityRole.Administrator)
-                            ?? throw new ForbiddenActionException("Access denied");
+        if (await _context.CommunityMembers.FirstOrDefaultAsync(cm =>
+                cm.CommunityId == community.Id
+                && cm.UserId == user.Id
+                && cm.Role == CommunityRole.Administrator) == null)
+            throw new ForbiddenActionException("Access denied");
 
         var tags = new List<Tag>();
         if (!postCreateDto.Tags.IsNullOrEmpty())
         {
             foreach (var tagGuid in postCreateDto.Tags)
             {
-                var tag = await _context.Tags.FirstOrDefaultAsync(tag => tag.Id == tagGuid)
-                          ?? throw new EntityNotFoundException($"Tag with Guid={tagGuid} not found.");
+                var tag = await _context.GetTagById(tagGuid);
 
                 tags.Add(tag);
             }
@@ -176,7 +161,7 @@ public class CommunityService : ICommunityService
         var newPost = PostMapper.MapToCommunityPost(postCreateDto, user, community, tags);
 
         await _context.Posts.AddAsync(newPost);
-        var existingAuthor = await _context.Authors.FirstOrDefaultAsync(author => author.UserId == authorId);
+        var existingAuthor = await _context.GetAuthorById(authorId);
 
         if (existingAuthor == null)
         {
@@ -198,8 +183,8 @@ public class CommunityService : ICommunityService
         return newPost.Id;
     }
 
-    public async Task<PostPagedListDto> GetCommunityPosts(
-        Guid? authorId,
+    public Task<PostPagedListDto> GetCommunityPosts(
+        Guid? userId,
         Guid communityId,
         List<Guid>? tags,
         SortingOption? sorting,
@@ -207,102 +192,7 @@ public class CommunityService : ICommunityService
         int size
     )
     {
-        var community = await _context.Communities
-                .Include(community => community.Members)
-                .FirstOrDefaultAsync(community => community.Id == communityId)
-                        ?? throw new EntityNotFoundException($"Community with Guid={communityId} not found.");
-
-        if (community.IsClosed && (authorId == null
-                                   || await _context.CommunityMembers.FirstOrDefaultAsync(cm =>
-                                       cm.CommunityId == communityId 
-                                       && cm.UserId == authorId) == null))
-        {
-            throw new ForbiddenActionException("This group is closed.");
-        }
-
-        var communityPostsQueryable = _context.Posts
-            .Where(post => post.CommunityId == community.Id)
-            .Include(post => post.Tags)
-            .Include(post => post.LikedPosts)
-            .AsQueryable();
-
-        var postsCount = communityPostsQueryable.Count();
-        var paginationCount =
-            !communityPostsQueryable.IsNullOrEmpty() ? (int)Math.Ceiling((double)postsCount / size) : 0;
-
-        if (page < 1 || (paginationCount != 0 && page > paginationCount))
-        {
-            throw new InvalidActionException("Invalid value for attribute page.");
-        }
-
-        var pagination = new PageInfoModel
-        {
-            Size = size,
-            Count = paginationCount,
-            Current = page
-        };
-
-        if (!tags.IsNullOrEmpty())
-        {
-            foreach (var guid in tags)
-            {
-                if (await _context.Tags.FirstOrDefaultAsync(tag => tag.Id == guid) == null)
-                    throw new EntityNotFoundException($"Tag with Guid={guid} not found.");
-            }
-            
-            communityPostsQueryable = communityPostsQueryable
-                .ToList()
-                .Where(post => post.Tags
-                    .Select(tag => tag.Id)
-                    .Intersect(tags).Count() == tags.Count)
-                .AsQueryable();
-        }
-
-        if (sorting != null)
-        {
-            communityPostsQueryable = (SortingOption)sorting switch
-            {
-                SortingOption.CreateAsc => communityPostsQueryable.OrderBy(post => post.CreateTime),
-                SortingOption.CreateDesc => communityPostsQueryable.OrderByDescending(post => post.CreateTime),
-                SortingOption.LikeAsc => communityPostsQueryable.OrderBy(post => post.Likes),
-                SortingOption.LikeDesc => communityPostsQueryable.OrderByDescending(post => post.Likes),
-                _ => throw new ArgumentOutOfRangeException(nameof(sorting), sorting, null)
-            };
-        }
-
-        var posts = communityPostsQueryable
-            .Skip((pagination.Current - 1) * pagination.Size)
-            .Take(pagination.Size)
-            .ToList();
-
-        User? user = null;
-        if (authorId != null)
-        {
-            user = await _context.Users.FirstOrDefaultAsync(u => u.Id == authorId)
-                   ?? throw new KeyNotFoundException("User not found.");
-        }
-
-        var postsDto = posts.Select(post =>
-            {
-                var hasLike = false;
-                if (user != null)
-                {
-                    hasLike = post.LikedPosts.Any(liked => liked.UserId == user.Id);
-                }
-
-                var tagDtos = post.Tags
-                    .Select(tag => _mapper.Map<TagDto>(tag))
-                    .ToList();
-
-                var postDto = PostMapper.MapToPostDto(post, hasLike, tagDtos);
-                return postDto;
-            }
-        ).ToList();
-
-        return new PostPagedListDto
-        {
-            Posts = postsDto,
-            Pagination = pagination
-        };
+        return _context.GetAllAvailablePosts(_mapper, userId, communityId, tags, null, null, null, sorting, false,
+            page, size);
     }
 }

@@ -1,5 +1,6 @@
 using BlogApi.Data.DbContext;
 using BlogApi.Dtos;
+using BlogApi.Extensions;
 using BlogApi.Mappers;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,7 +22,7 @@ public class AuthorService : IAuthorService
         var authorDtos = new List<AuthorDto>();
         foreach (var author in authors)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(user => user.Id == author.UserId);
+            var user = await _context.GetUserById(author.UserId);
 
             var authorDto = AuthorMapper.MapToAuthorDto(user!, author);
             
