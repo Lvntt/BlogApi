@@ -23,9 +23,7 @@ public class AuthorService : IAuthorService
         foreach (var author in authors)
         {
             var user = await _context.GetUserById(author.UserId);
-
-            var authorDto = AuthorMapper.MapToAuthorDto(user!, author);
-            
+            var authorDto = AuthorMapper.MapToAuthorDto(user, author);
             authorDtos.Add(authorDto);
         }
 

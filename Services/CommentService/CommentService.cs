@@ -30,6 +30,7 @@ public class CommentService : ICommentService
         var commentTree = await _context.Comments
             .Where(c => c.TopLevelCommentId == parentComment.Id)
             .ToListAsync();
+        
         return commentTree
             .OrderBy(comment => comment.CreateTime)
             .Select(comment => _mapper.Map<CommentDto>(comment))
@@ -39,7 +40,6 @@ public class CommentService : ICommentService
     public async Task AddComment(Guid postId, Guid authorId, CreateCommentDto createCommentDto)
     {
         var post = await _context.GetPostById(postId);
-
         var author = await _context.GetUserById(authorId);
 
         Guid? topLevelCommentId = null;
@@ -64,10 +64,8 @@ public class CommentService : ICommentService
     public async Task EditComment(Guid commentId, Guid authorId, UpdateCommentDto updateCommentDto)
     {
         var author = await _context.GetUserById(authorId);
-
         var comment = await _context.Comments.FirstOrDefaultAsync(comment => comment.Id == commentId)
                       ?? throw new EntityNotFoundException($"Comment with Guid={commentId} not found.");
-
         var post = await _context.GetPostById(comment.PostId);
 
         if (post.CommunityId != null)
@@ -92,10 +90,8 @@ public class CommentService : ICommentService
     public async Task DeleteComment(Guid commentId, Guid authorId)
     {
         var author = await _context.GetUserById(authorId);
-
         var comment = await _context.Comments.FirstOrDefaultAsync(comment => comment.Id == commentId)
                       ?? throw new EntityNotFoundException($"Comment with Guid={commentId} not found.");
-
         var post = await _context.GetPostById(comment.PostId);
 
         if (post.CommunityId != null)
@@ -121,9 +117,8 @@ public class CommentService : ICommentService
 
             if (comment.ParentCommentId != null)
             {
-                var parentComment = await _context.Comments.FirstOrDefaultAsync(comment => comment.Id == comment.ParentCommentId)
-                                    ?? throw new EntityNotFoundException(
-                                        $"Comment with Guid={comment.ParentCommentId} not found.");
+                var parentComment = await _context.Comments.FirstOrDefaultAsync(c => c.Id == comment.ParentCommentId)
+                                    ?? throw new EntityNotFoundException($"Comment with Guid={comment.ParentCommentId} not found.");
 
                 parentComment.SubComments--;
             }

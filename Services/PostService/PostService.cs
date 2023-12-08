@@ -48,7 +48,6 @@ public class PostService : IPostService
             foreach (var tagGuid in postCreateDto.Tags)
             {
                 var tag = await _context.GetTagById(tagGuid);
-
                 tags.Add(tag);
             }
         }
@@ -86,7 +85,6 @@ public class PostService : IPostService
         if (userId != null)
         {
             var user = await _context.GetUserById((Guid)userId);
-
             hasLike = post.LikedPosts.Any(liked => liked.UserId == user.Id);
         }
 

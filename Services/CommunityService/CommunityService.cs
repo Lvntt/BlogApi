@@ -24,8 +24,7 @@ public class CommunityService : ICommunityService
 
     public async Task<Guid> CreateCommunity(CommunityCreateDto communityCreateDto, Guid userId)
     {
-        if (await _context.Communities.FirstOrDefaultAsync(community => community.Name == communityCreateDto.Name) !=
-            null)
+        if (await _context.Communities.FirstOrDefaultAsync(community => community.Name == communityCreateDto.Name) != null)
             throw new InvalidActionException($"Community with name {communityCreateDto.Name} already exists.");
 
         var newCommunity = CommunityMapper.MapToCommunity(communityCreateDto);
@@ -56,9 +55,7 @@ public class CommunityService : ICommunityService
         foreach (var administrator in administrators)
         {
             var user = await _context.GetUserById(administrator.UserId);
-
             var userDto = UserMapper.MapToUserDto(user);
-
             administratorUserDtos.Add(userDto);
         }
 
@@ -138,7 +135,6 @@ public class CommunityService : ICommunityService
     public async Task<Guid> CreatePost(PostCreateDto postCreateDto, Guid authorId, Guid communityId)
     {
         var user = await _context.GetUserById(authorId);
-
         var community = await _context.GetCommunityById(communityId);
 
         if (await _context.CommunityMembers.FirstOrDefaultAsync(cm =>
@@ -153,7 +149,6 @@ public class CommunityService : ICommunityService
             foreach (var tagGuid in postCreateDto.Tags)
             {
                 var tag = await _context.GetTagById(tagGuid);
-
                 tags.Add(tag);
             }
         }

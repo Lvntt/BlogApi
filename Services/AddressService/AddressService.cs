@@ -113,12 +113,11 @@ public class AddressService : IAddressService
                 .FirstOrDefaultAsync();
 
             if (parentObject != null)
-            {
                 result.Add(parentObject);
-            }
         }
 
-        if (parentObjectIds.Count == result.Count) return result;
+        if (parentObjectIds.Count == result.Count) 
+            return result;
 
         var house = await (
                 from asHouse in _context.AsHouses
@@ -136,9 +135,7 @@ public class AddressService : IAddressService
             .FirstOrDefaultAsync();
 
         if (house != null)
-        {
             result.Add(house);
-        }
 
         return result;
     }
