@@ -96,6 +96,7 @@ builder.Services.AddAuthentication(options =>
                 context.HttpContext.RequestServices.GetRequiredService<ITokenBlacklistRepository>();
             var token = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             var userId = jwtService.ValidateToken(token);
+            // TODO extension GetTokenFromBlacklist(new TokenModel { Token = token }) != null;
             var isTokenInBlacklist =
                 await tokenBlacklistRepository.GetTokenFromBlacklist(new TokenModel { Token = token }) != null;
             if (userId == null || isTokenInBlacklist)

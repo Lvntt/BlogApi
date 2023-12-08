@@ -1,29 +1,27 @@
-using BlogApi.Data.Repositories.AuthorRepo;
-using BlogApi.Data.Repositories.UserRepo;
+using BlogApi.Data.DbContext;
 using BlogApi.Dtos;
 using BlogApi.Mappers;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlogApi.Services.AuthorService;
 
 public class AuthorService : IAuthorService
 {
-    private readonly IAuthorRepository _authorRepository;
-    private readonly IUserRepository _userRepository;
+    private readonly BlogDbContext _context;
 
-    public AuthorService(IAuthorRepository authorRepository, IUserRepository userRepository)
+    public AuthorService(BlogDbContext context)
     {
-        _authorRepository = authorRepository;
-        _userRepository = userRepository;
+        _context = context;
     }
 
     public async Task<List<AuthorDto>> GetAllAuthors()
     {
-        var authors = await _authorRepository.GetAllAuthors();
+        var authors = await _context.Authors.ToListAsync();
 
         var authorDtos = new List<AuthorDto>();
         foreach (var author in authors)
         {
-            var user = await _userRepository.GetUserById(author.UserId);
+            var user = await _context.Users.FirstOrDefaultAsync(user => user.Id == author.UserId);
 
             var authorDto = AuthorMapper.MapToAuthorDto(user!, author);
             
