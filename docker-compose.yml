@@ -9,6 +9,7 @@ services:
     image: docker.io/library/blogapi
     depends_on:
       - blog_db
+      - gar_db
     container_name: blogapi-services
     ports:
       - "8088:80"
@@ -17,6 +18,7 @@ services:
       dockerfile: Dockerfile
     environment:
       - ConnectionStrings__BlogConnection=Username=postgres;Password=root;Server=database_host;Port=5432;Database=Blog;Pooling=true;
+      - ConnectionStrings__GarConnection=Username=postgres;Password=root;Server=gar_database_host;Port=5432;Database=Gar;Pooling=true;
       - ASPNETCORE_URLS=http://+:80
     networks:
       - dev
@@ -36,3 +38,19 @@ services:
       - C:/Users/Lantt/docker-db-lab/var/docker-db-lab:/var/lib/postgresql/data
     networks:
       - dev
+  
+  gar_db:
+    image: postgres:alpine
+    container_name: gar_db
+    environment:
+      - POSTGRES_DB=Gar
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=root
+    hostname: gar_database_host
+    expose:
+      - "5432"
+    restart: always
+    volumes:
+      - C:/Users/Lantt/docker-db-lab/var/docker-db-lab:/var/lib/postgresql/data
+    networks:
+      - dev 
