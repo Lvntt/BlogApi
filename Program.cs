@@ -74,12 +74,13 @@ builder.Services.AddAuthentication(options =>
         OnTokenValidated = async context =>
         {
             var jwtService = context.HttpContext.RequestServices.GetRequiredService<IJwtService>();
-            var blogDbContext =
-                context.HttpContext.RequestServices.GetRequiredService<BlogDbContext>();
+            var userService =
+                context.HttpContext.RequestServices.GetRequiredService<IUserService>();
             var token = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             var userId = jwtService.ValidateToken(token);
-            var isTokenInBlacklist =
-                await blogDbContext.InvalidTokens.FirstOrDefaultAsync(t => t.Token == token) != null;
+            // var isTokenInBlacklist =
+            //     await userService.InvalidTokens.FirstOrDefaultAsync(t => t.Token == token) != null;
+            var isTokenInBlacklist = await userService.IsTokenInvalid(token);
             if (userId == null || isTokenInBlacklist)
             {
                 context.Fail("Unauthorized");

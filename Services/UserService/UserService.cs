@@ -6,18 +6,28 @@ using BlogApi.Exceptions;
 using BlogApi.Extensions;
 using BlogApi.Mappers;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 
 namespace BlogApi.Services.UserService;
 
 public class UserService : IUserService
 {
+    private readonly IConfiguration _configuration;
     private readonly BlogDbContext _context;
+    private readonly IDatabase _invalidTokens;
     private readonly IMapper _mapper;
 
-    public UserService(IMapper mapper, BlogDbContext context)
+    public UserService(IMapper mapper, BlogDbContext context, IConfiguration configuration)
     {
         _mapper = mapper;
         _context = context;
+        _configuration = configuration;
+        
+        var redisConnectionString = _configuration.GetConnectionString("RedisConnection");
+        var connection = ConnectionMultiplexer.Connect(redisConnectionString!);
+        var invalidTokens = connection.GetDatabase();
+        
+        _invalidTokens = invalidTokens;
     }
 
     public async Task<User> Register(UserRegisterDto userRegisterDto)
@@ -45,8 +55,14 @@ public class UserService : IUserService
 
     public async Task Logout(TokenModel token)
     {
-        await _context.InvalidTokens.AddAsync(token);
-        await _context.SaveChangesAsync();
+        var expiryTime =
+            TimeSpan.FromMinutes(Convert.ToDouble(_configuration["Authentication:ExpirationTimeMinutes"]));
+        await _invalidTokens.StringSetAsync(token.Token, "exp", expiryTime);
+    }
+
+    public Task<bool> IsTokenInvalid(string token)
+    {
+        return _invalidTokens.KeyExistsAsync(token);
     }
 
     public async Task<UserDto> GetUserProfile(Guid id)

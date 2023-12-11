@@ -12,6 +12,7 @@ public partial class GarDbContext : Microsoft.EntityFrameworkCore.DbContext
     public GarDbContext(DbContextOptions<GarDbContext> options)
         : base(options)
     {
+        Database.EnsureCreated();
     }
 
     public virtual DbSet<AsAddrObj> AsAddrObjs { get; set; }
