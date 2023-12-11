@@ -2,6 +2,7 @@ using BlogApi.Data;
 using BlogApi.Data.DbContext;
 using BlogApi.Dtos;
 using BlogApi.Exceptions;
+using BlogApi.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlogApi.Services.AddressService;
@@ -26,7 +27,8 @@ public class AddressService : IAddressService
                 where asAdmHierarchy.Parentobjid == parentObjectId
                       && asAddrObj.Isactive == 1
                       && asAddrObj.Isactual == 1
-                      && asAddrObj.Name.ToLower().Contains(queryLowered)
+                      && asAddrObj.Lowercasename.Contains(queryLowered)
+                // TODO orderby EF.Functions.TrigramsSimilarity(queryLowered, asAddrObj.Lowercasename) descending
                 select new SearchAddressDto
                 {
                     ObjectId = asAddrObj.Objectid,
@@ -47,12 +49,13 @@ public class AddressService : IAddressService
                 where asAdmHierarchy.Parentobjid == parentObjectId
                       && asHouse.Isactive == 1
                       && asHouse.Isactual == 1
-                      && asHouse.Housenum.ToLower().Contains(queryLowered)
+                      && asHouse.Lowercasehousenum.Contains(queryLowered)
+                // TODO orderby EF.Functions.TrigramsSimilarity(queryLowered, asHouse.Lowercasehousenum) descending
                 select new SearchAddressDto
                 {
                     ObjectId = asHouse.Objectid,
                     ObjectGuid = asHouse.Objectguid,
-                    Text = asHouse.Housenum,
+                    Text = asHouse.GetHouseText(),
                     ObjectLevel = ObjectLevelDescriptionMap.ObjectDescriptionFromLevel["10"].ObjectLevel,
                     ObjectLevelText = ObjectLevelDescriptionMap.ObjectDescriptionFromLevel["10"]
                         .ObjectLevelText
@@ -126,7 +129,7 @@ public class AddressService : IAddressService
                 {
                     ObjectId = asHouse.Objectid,
                     ObjectGuid = asHouse.Objectguid,
-                    Text = asHouse.Housenum,
+                    Text = asHouse.GetHouseText(),
                     ObjectLevel = ObjectLevelDescriptionMap.ObjectDescriptionFromLevel["10"].ObjectLevel,
                     ObjectLevelText = ObjectLevelDescriptionMap.ObjectDescriptionFromLevel["10"]
                         .ObjectLevelText

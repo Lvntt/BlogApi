@@ -79,4 +79,6 @@ public partial class AsAddrObj
     /// Признак действующего адресного объекта
     /// </summary>
     public int? Isactive { get; set; }
+    
+    public string? Lowercasename { get; set; }
 }

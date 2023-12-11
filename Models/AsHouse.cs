@@ -94,4 +94,6 @@ public partial class AsHouse
     /// Признак действующего адресного объекта
     /// </summary>
     public int? Isactive { get; set; }
+    
+    public string? Lowercasehousenum { get; set; }
 }

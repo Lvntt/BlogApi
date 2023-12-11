@@ -74,6 +74,8 @@ public partial class GarDbContext : Microsoft.EntityFrameworkCore.DbContext
             entity.Property(e => e.Updatedate)
                 .HasComment("Дата внесения (обновления) записи")
                 .HasColumnName("updatedate");
+            entity.Property(e => e.Lowercasename)
+                .HasColumnName("lowercasename");
         });
 
         modelBuilder.Entity<AsAdmHierarchy>(entity =>
@@ -197,6 +199,8 @@ public partial class GarDbContext : Microsoft.EntityFrameworkCore.DbContext
             entity.Property(e => e.Updatedate)
                 .HasComment("Дата внесения (обновления) записи")
                 .HasColumnName("updatedate");
+            entity.Property(e => e.Lowercasehousenum)
+                .HasColumnName("lowercasehousenum");
         });
 
         OnModelCreatingPartial(modelBuilder);

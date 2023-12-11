@@ -128,4 +128,26 @@ public static class ObjectLevelDescriptionMap
                 }
             }
         };
+
+    // TODO расширить
+    public static Dictionary<int, string> HouseDescriptionFromHouseType { get; } =
+        new()
+        {
+            // корпус
+            {
+                1, "к."
+            },
+            // строение
+            {
+                2, "стр."
+            },
+            // сооружение
+            {
+                3, "соор."
+            },
+            // литера
+            {
+                4, "л."
+            }
+        };
 }
