@@ -5,6 +5,7 @@ using BlogApi.Exceptions;
 using BlogApi.Extensions;
 using BlogApi.Mappers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 namespace BlogApi.Services.CommentService;
 
@@ -36,11 +37,13 @@ public class CommentService : ICommentService
             .Select(comment => _mapper.Map<CommentDto>(comment))
             .ToList();
     }
-
+    
     public async Task AddComment(Guid postId, Guid authorId, CreateCommentDto createCommentDto)
     {
         var post = await _context.GetPostById(postId);
         var author = await _context.GetUserById(authorId);
+
+        await _context.CheckUserCommunityAccess(post, authorId);
 
         Guid? topLevelCommentId = null;
 
@@ -66,8 +69,12 @@ public class CommentService : ICommentService
         var author = await _context.GetUserById(authorId);
         var comment = await _context.Comments.FirstOrDefaultAsync(comment => comment.Id == commentId)
                       ?? throw new EntityNotFoundException($"Comment with Guid={commentId} not found.");
-        var post = await _context.GetPostById(comment.PostId);
 
+        if (comment.DeleteDate != null)
+            throw new InvalidActionException("This comment is deleted and thus cannot be edited.");
+        
+        var post = await _context.GetPostById(comment.PostId);
+        
         if (post.CommunityId != null)
         {
             var community = await _context.GetCommunityById((Guid)post.CommunityId);

@@ -100,7 +100,7 @@ public class CommunityService : ICommunityService
 
         if (await _context.CommunityMembers.FirstOrDefaultAsync(cm =>
                 cm.CommunityId == communityId
-                && cm.UserId == userId) == null)
+                && cm.UserId == userId) != null)
             throw new InvalidActionException("User is already a member of this community.");
 
         var newSubscriber = new CommunityMember

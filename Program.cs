@@ -78,8 +78,6 @@ builder.Services.AddAuthentication(options =>
                 context.HttpContext.RequestServices.GetRequiredService<IUserService>();
             var token = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             var userId = jwtService.ValidateToken(token);
-            // var isTokenInBlacklist =
-            //     await userService.InvalidTokens.FirstOrDefaultAsync(t => t.Token == token) != null;
             var isTokenInBlacklist = await userService.IsTokenInvalid(token);
             if (userId == null || isTokenInBlacklist)
             {
@@ -105,5 +103,14 @@ app.UseAuthorization();
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var blogDbContext = scope.ServiceProvider.GetRequiredService<BlogDbContext>();
+    if (blogDbContext.Database.GetPendingMigrations().Any())
+    {
+        blogDbContext.Database.Migrate();
+    }
+}
 
 app.Run();

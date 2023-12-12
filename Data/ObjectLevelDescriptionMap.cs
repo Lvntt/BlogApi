@@ -128,26 +128,68 @@ public static class ObjectLevelDescriptionMap
                 }
             }
         };
-
-    // TODO расширить
-    public static Dictionary<int, string> HouseDescriptionFromHouseType { get; } =
+    
+    public static Dictionary<int, string> HouseDescriptionFromAddType { get; } =
         new()
         {
-            // корпус
             {
                 1, "к."
             },
-            // строение
             {
                 2, "стр."
             },
-            // сооружение
             {
                 3, "соор."
             },
-            // литера
             {
                 4, "л."
+            }
+        };
+    
+    public static Dictionary<int, string> HouseDescriptionFromHouseType { get; } =
+        new()
+        {
+            {
+                1, "вл."
+            },
+            {
+                2, "д."
+            },
+            {
+                3, "двлд."
+            },
+            {
+                4, "гар."
+            },
+            {
+                5, "зд."
+            },
+            {
+                6, "ш."
+            },
+            {
+                7, "стр."
+            },
+            {
+                8, "соор."
+            },
+            {
+                9, "лит."
+            },
+            {
+                10, "к."
+            },
+            {
+                11, "под."
+            },
+            {
+                12, "кот."
+            },
+            {
+                13, "погр."
+            },
+            {
+                14, "ОНС"
             }
         };
 }

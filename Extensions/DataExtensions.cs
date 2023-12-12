@@ -18,13 +18,12 @@ public static class DataExtensions
         return await context.Users.FirstOrDefaultAsync(user => user.Id == id) ??
                throw new EntityNotFoundException("User not found.");
     }
-    
-    public static async Task<User> GetUserByEmail(this BlogDbContext context, string email)
+
+    public static async Task<User?> GetUserByEmail(this BlogDbContext context, string email)
     {
-        return await context.Users.FirstOrDefaultAsync(user => user.Email == email) ??
-               throw new EntityExistsException("User with this email already exists.");
+        return await context.Users.FirstOrDefaultAsync(user => user.Email == email);
     }
-    
+
     public static async Task<Tag> GetTagById(this BlogDbContext context, Guid id)
     {
         return await context.Tags.FirstOrDefaultAsync(tag => tag.Id == id) ??
@@ -156,21 +155,47 @@ public static class DataExtensions
     
     public static string GetHouseText(this AsHouse asHouse)
     {
-        var text = asHouse.Housenum!;
-
+        var text = "";
+        
+        if (asHouse.Housetype != null)
+        {
+            text += $"{ObjectLevelDescriptionMap.HouseDescriptionFromHouseType[(int)asHouse.Housetype]} ";
+        }
+        
+        if (asHouse.Housenum != null)
+        {
+            text += $"{asHouse.Housenum} ";
+        }
+        
         if (asHouse.Addtype1 != null)
         {
-            text += $" {ObjectLevelDescriptionMap.HouseDescriptionFromHouseType[(int)asHouse.Addtype1]}";
-            text += $" {asHouse.Addnum1}";
+            text += $"{ObjectLevelDescriptionMap.HouseDescriptionFromAddType[(int)asHouse.Addtype1]} ";
+            text += $"{asHouse.Addnum1} ";
         }
 
         if (asHouse.Addtype2 != null)
         {
-            text += $" {ObjectLevelDescriptionMap.HouseDescriptionFromHouseType[(int)asHouse.Addtype2]}";
-            text += $" {asHouse.Addnum2}";
+            text += $"{ObjectLevelDescriptionMap.HouseDescriptionFromAddType[(int)asHouse.Addtype2]} ";
+            text += $"{asHouse.Addnum2} ";
         }
 
-        return text;
+        return text.Trim();
+    }
+
+    public static async Task CheckUserCommunityAccess(this BlogDbContext context, Post post, Guid? userId)
+    {
+        if (userId == null)
+            throw new ForbiddenActionException("Access denied");
+        
+        if (post.CommunityId != null)
+        {
+            var community = await context.GetCommunityById((Guid)post.CommunityId);
+            var isUserCommunityMember = await context.CommunityMembers.FirstOrDefaultAsync(cm =>
+                cm.CommunityId == community.Id
+                && cm.UserId == userId) != null;
+            if (community.IsClosed && !isUserCommunityMember)
+                throw new ForbiddenActionException("Access denied");
+        }
     }
     
     private static IQueryable<Post> GetPostsQueryable(this BlogDbContext context)

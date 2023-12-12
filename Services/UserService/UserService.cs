@@ -32,7 +32,8 @@ public class UserService : IUserService
 
     public async Task<User> Register(UserRegisterDto userRegisterDto)
     {
-        await _context.GetUserByEmail(userRegisterDto.Email);
+        if (await _context.GetUserByEmail(userRegisterDto.Email) != null)
+            throw new EntityExistsException("User with this email already exists.");
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(userRegisterDto.Password);
 
@@ -46,6 +47,8 @@ public class UserService : IUserService
     public async Task<User> Login(LoginCredentialsDto loginCredentialsDto)
     {
         var user = await _context.GetUserByEmail(loginCredentialsDto.Email);
+        if (user == null)
+            throw new EntityNotFoundException("User not found.");
 
         if (!BCrypt.Net.BCrypt.Verify(loginCredentialsDto.Password, user.PasswordHash))
             throw new InvalidCredentialsException("Invalid email or password.");

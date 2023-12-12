@@ -19,30 +19,30 @@ public class AddressService : IAddressService
     public async Task<List<SearchAddressDto>> Search(long parentObjectId, string query)
     {
         var queryLowered = query.ToLower();
+        
+        var addressObjectsQueryable =
+            from asAdmHierarchy in _context.AsAdmHierarchies
+            join asAddrObj in _context.AsAddrObjs
+                on asAdmHierarchy.Objectid equals asAddrObj.Objectid
+            where asAdmHierarchy.Parentobjid == parentObjectId
+                  && asAddrObj.Isactive == 1
+                  && asAddrObj.Isactual == 1
+                  && asAddrObj.Lowercasename.Contains(queryLowered)
+            // TODO orderby EF.Functions.TrigramsSimilarity(queryLowered, asAddrObj.Lowercasename) descending
+            select new SearchAddressDto
+            {
+                ObjectId = asAddrObj.Objectid,
+                ObjectGuid = asAddrObj.Objectguid,
+                Text = $"{asAddrObj.Typename} {asAddrObj.Name}",
+                ObjectLevel = ObjectLevelDescriptionMap.ObjectDescriptionFromLevel[asAddrObj.Level].ObjectLevel,
+                ObjectLevelText = ObjectLevelDescriptionMap.ObjectDescriptionFromLevel[asAddrObj.Level]
+                    .ObjectLevelText
+            };
+            
+        addressObjectsQueryable = string.IsNullOrEmpty(query) ? addressObjectsQueryable.Take(10) : addressObjectsQueryable;
+        var addressObjects = await addressObjectsQueryable.ToListAsync();
 
-        var addressObjects = await (
-                from asAdmHierarchy in _context.AsAdmHierarchies
-                join asAddrObj in _context.AsAddrObjs
-                    on asAdmHierarchy.Objectid equals asAddrObj.Objectid
-                where asAdmHierarchy.Parentobjid == parentObjectId
-                      && asAddrObj.Isactive == 1
-                      && asAddrObj.Isactual == 1
-                      && asAddrObj.Lowercasename.Contains(queryLowered)
-                // TODO orderby EF.Functions.TrigramsSimilarity(queryLowered, asAddrObj.Lowercasename) descending
-                select new SearchAddressDto
-                {
-                    ObjectId = asAddrObj.Objectid,
-                    ObjectGuid = asAddrObj.Objectguid,
-                    Text = $"{asAddrObj.Typename} {asAddrObj.Name}",
-                    ObjectLevel = ObjectLevelDescriptionMap.ObjectDescriptionFromLevel[asAddrObj.Level].ObjectLevel,
-                    ObjectLevelText = ObjectLevelDescriptionMap.ObjectDescriptionFromLevel[asAddrObj.Level]
-                        .ObjectLevelText
-                }
-            )
-            .Take(20)
-            .ToListAsync();
-
-        var houses = await (
+        var housesQueryable =
                 from asAdmHierarchy in _context.AsAdmHierarchies
                 join asHouse in _context.AsHouses
                     on asAdmHierarchy.Objectid equals asHouse.Objectid
@@ -59,10 +59,10 @@ public class AddressService : IAddressService
                     ObjectLevel = ObjectLevelDescriptionMap.ObjectDescriptionFromLevel["10"].ObjectLevel,
                     ObjectLevelText = ObjectLevelDescriptionMap.ObjectDescriptionFromLevel["10"]
                         .ObjectLevelText
-                }
-            )
-            .Take(10)
-            .ToListAsync();
+                };
+            
+        housesQueryable = string.IsNullOrEmpty(query) ? housesQueryable.Take(10) : housesQueryable;
+        var houses = await housesQueryable.ToListAsync();
 
         var result = addressObjects
             .Concat(houses)

@@ -81,6 +81,8 @@ public class PostService : IPostService
     {
         var post = await _context.GetPostById(postId);
 
+        await _context.CheckUserCommunityAccess(post, userId);
+
         var hasLike = false;
         if (userId != null)
         {
@@ -93,6 +95,7 @@ public class PostService : IPostService
             .ToList();
 
         var comments = post.Comments
+            .Where(comment => comment.ParentCommentId == null)
             .Select(comment => _mapper.Map<CommentDto>(comment))
             .ToList();
 
@@ -105,6 +108,8 @@ public class PostService : IPostService
     {
         var post = await _context.GetPostById(postId);
         var user = await _context.GetUserById(userId);
+        
+        await _context.CheckUserCommunityAccess(post, userId);
 
         var author = await _context.GetAuthorById(post.AuthorId)
                      ?? throw new EntityNotFoundException("Author not found.");
@@ -125,6 +130,8 @@ public class PostService : IPostService
     {
         var post = await _context.GetPostById(postId);
         var user = await _context.GetUserById(userId);
+        
+        await _context.CheckUserCommunityAccess(post, userId);
 
         var existingLike = await _context.Likes
                                .FirstOrDefaultAsync(like =>

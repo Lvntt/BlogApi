@@ -1,6 +1,6 @@
 ﻿using BlogApi.Dtos;
-using BlogApi.Models;
 using BlogApi.Services.TagService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BlogApi.Controllers;
@@ -22,6 +22,7 @@ public class TagController : ControllerBase
         return Ok(await _tagService.GetTags());
     }
 
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> CreateTag(TagCreateDto tagCreateDto)
     {

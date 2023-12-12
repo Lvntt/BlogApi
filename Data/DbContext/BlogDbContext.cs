@@ -7,7 +7,6 @@ public class BlogDbContext : Microsoft.EntityFrameworkCore.DbContext
 {
     public BlogDbContext(DbContextOptions<BlogDbContext> options) : base(options)
     {
-        Database.EnsureCreated();
     }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -24,7 +23,6 @@ public class BlogDbContext : Microsoft.EntityFrameworkCore.DbContext
     }
     
     public DbSet<User> Users { get; set; }
-    public DbSet<TokenModel> InvalidTokens { get; set; }
     public DbSet<Tag> Tags { get; set; }
     public DbSet<Post> Posts { get; set; }
     public DbSet<Author> Authors { get; set; }
