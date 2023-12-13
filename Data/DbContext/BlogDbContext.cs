@@ -20,6 +20,12 @@ public class BlogDbContext : Microsoft.EntityFrameworkCore.DbContext
             .HasMany<User>()
             .WithMany()
             .UsingEntity<CommunityMember>(cm => cm.ToTable("CommunityMembers"));
+
+        modelBuilder.Entity<Post>()
+            .HasOne(post => post.Community)
+            .WithMany()
+            .HasForeignKey(post => post.CommunityId)
+            .IsRequired(false);
     }
     
     public DbSet<User> Users { get; set; }

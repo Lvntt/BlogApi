@@ -51,4 +51,6 @@ public class Post
 
     [Required]
     public List<Like> LikedPosts { get; set; } = new();
+
+    public Community? Community { get; set; }
 }
