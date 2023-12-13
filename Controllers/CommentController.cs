@@ -41,11 +41,11 @@ public class CommentController : ControllerBase
         return Ok();
     }
     
-    [Authorize]
+    [AllowAnonymous]
     [HttpGet("{commentId}/tree")]
     public async Task<ActionResult<List<CommentDto>>> GetCommentTree(Guid commentId)
     {
-        return Ok(await _commentService.GetCommentTree(commentId));
+        return Ok(await _commentService.GetCommentTree(commentId, UserId));
     }
     
     [Authorize]

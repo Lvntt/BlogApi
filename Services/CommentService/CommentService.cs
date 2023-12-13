@@ -20,10 +20,13 @@ public class CommentService : ICommentService
         _context = context;
     }
 
-    public async Task<List<CommentDto>> GetCommentTree(Guid commentId)
+    public async Task<List<CommentDto>> GetCommentTree(Guid commentId, Guid? userId)
     {
         var parentComment = await _context.Comments.FirstOrDefaultAsync(comment => comment.Id == commentId)
                             ?? throw new EntityNotFoundException($"Comment with Guid={commentId} not found.");
+
+        var post = await _context.GetPostById(parentComment.PostId);
+        await _context.CheckUserCommunityAccess(post, userId);
 
         if (parentComment.ParentCommentId != null)
             throw new InvalidActionException($"Comment with Guid={commentId} is not a root comment.");
